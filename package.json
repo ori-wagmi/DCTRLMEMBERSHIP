@@ -1,0 +1,17 @@
+{
+  "name": "hardhat-project",
+  "scripts": {
+    "start": "npx hardhat run ./scripts/start.js"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "hardhat": "^2.19.1",
+    "install": "^0.13.0"
+  },
+  "dependencies": {
+    "@account-abstraction/contracts": "^0.6.0",
+    "@openzeppelin/contracts": "^4.9.3",
+    "dotenv": "^16.3.1",
+    "erc6551": "^0.3.1"
+  }
+}
