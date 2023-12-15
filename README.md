@@ -23,6 +23,8 @@ This is a command line tool for interacting with a local deployment of the smart
 
 Run it with `npm start`
 
+To see a tutorial, watch the following 13 min video (i know the link looks sus, but it's a microsoft [.ms] onedrive [1drv] link): https://1drv.ms/v/s!AiBtiJ6tWLolzA3UwNhtoc5Wp9Pp?e=Ykq630
+
 ## Smart Contracts
 ### Summary
 This project contains the following smart contracts:
