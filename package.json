@@ -1,7 +1,7 @@
 {
   "name": "hardhat-project",
   "scripts": {
-    "start": "npx hardhat run ./scripts/start.js"
+    "start": "npx hardhat run ./scripts/tool/start.js"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",

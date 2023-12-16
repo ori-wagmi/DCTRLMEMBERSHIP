@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 // import "hardhat/console.sol";
 
 contract FobNFT is ERC721, AccessControl {
+    using Strings for uint256;
+
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
 
@@ -19,24 +21,29 @@ contract FobNFT is ERC721, AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);    
     }
 
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        _requireMinted(tokenId);
+        return idToExpiration[tokenId].toString();
+    }
+
     function issue(address to, uint256 fobNumber) public onlyRole(MINTER_ROLE) {
         require(!_exists(fobNumber), "already exists");
         _issue(to, fobNumber);
     }
 
     function reissue(address to, uint256 fobNumber) public onlyRole(MINTER_ROLE) {
-        require(_exists(fobNumber), "not exist");
+        _requireMinted(fobNumber);
         burn(fobNumber);
         _issue(to, fobNumber);
     }
 
     function extend(uint256 fobNumber) public onlyRole(MINTER_ROLE) {
-        require(_exists(fobNumber), "not exist");
+        _requireMinted(fobNumber);
         idToExpiration[fobNumber] = idToExpiration[fobNumber] + 30 days;
     }
 
     function burn(uint256 fobNumber) public onlyRole(BURNER_ROLE) {
-        require(_exists(fobNumber), "not exist");
+        _requireMinted(fobNumber);
         delete idToExpiration[fobNumber];
         _burn(fobNumber);
         emit Burn(fobNumber);

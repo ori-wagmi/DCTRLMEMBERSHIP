@@ -4,6 +4,9 @@ This project contains the smart contract and local testing tool for DCTRL Member
 
 https://app.dework.xyz/dctrl/nft-membership-40303/view/board-loywtdc1?taskId=225389bb-682e-4954-83e6-461c3adffc10
 
+## Deployments
+FobNFT Optimism-Sepolia: https://optimism-sepolia.blockscout.com/address/0x93f6A58CeB439fbe8DDa84B5E02e334aaF6024c4
+
 # How to use
 1. Create a copy of `.env.example` and rename it to `.env`
 2. Add your private key to `.env` if you intend to deploy
@@ -56,6 +59,8 @@ The MembershipNFT is expected to be upgraded to a TokenBoundAccount using Accoun
 
 ### FobNFT
 FobNFT.sol is an ERC721 that represents a physical fob that gives access to the DCTRL space. It is intended that either EOA or a TokenBoundAccount can hold a fob.
+
+The Expiration of the Fob is UNIX time in seconds and can be queried via `tokenURI()` or `idToExpiration()`.
 
 ### Minter
 Minter.sol is the orcestrator contract that users interact with. It is expected to have the roles to issue and manage membershipNFTs and fobNFTs. Minter is also expected to handle payment.

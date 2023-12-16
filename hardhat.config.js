@@ -8,6 +8,11 @@ module.exports = {
     arb: {
       url: `https://ethereum-sepolia.publicnode.com`,
       accounts: [process.env.DEPLOYER_PRIV_KEY],
-    }
+    },
+    op_sepolia: {
+      url: `https://sepolia.optimism.io`,
+      accounts: [process.env.DEPLOYER_PRIV_KEY],
+    },
+    
   },
 };

@@ -57,6 +57,7 @@ module.exports.burnFob = async function burnFob(caller, fobNumber) {
 module.exports.queryFobContractById = async function queryFobContractById(id) {
     console.log(`
     Owner of fob ${id}: ${await Globals.fobContract.ownerOf(id)}
+    TokenUri of fob ${id}: ${await Globals.fobContract.tokenURI(id)}
     Expiration Date of fob ${id}: ${(new Date((await Globals.fobContract.idToExpiration(id))*1000)).toString()}
     `);
 }

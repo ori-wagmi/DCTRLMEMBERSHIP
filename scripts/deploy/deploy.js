@@ -8,7 +8,6 @@ const hre = require("hardhat");
 
 const waitFor = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
-
 async function main() {
   let [owner] = await ethers.getSigners();
 
