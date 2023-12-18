@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
+require("@nomicfoundation/hardhat-foundry");
 require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
@@ -13,6 +14,5 @@ module.exports = {
       url: `https://sepolia.optimism.io`,
       accounts: [process.env.DEPLOYER_PRIV_KEY],
     },
-    
   },
 };
