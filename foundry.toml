@@ -1,6 +1,13 @@
 [profile.default]
 src = 'contracts'
-out = 'out'
-libs = ['node_modules', 'lib']
-test = 'test'
+out = 'artifacts_forge'
 cache_path  = 'cache_forge'
+test = 'tests_forge'
+libs = ['node_modules', 'lib']
+
+solc = "0.8.22"
+remappings = [
+    '@openzeppelin=node_modules/@openzeppelin/',
+    'hardhat/=node_modules/hardhat/',
+    'forge-std/=lib/forge-std/src/'
+]
