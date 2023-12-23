@@ -4,6 +4,8 @@ This project contains the smart contract and local testing tool for DCTRL Member
 
 https://app.dework.xyz/dctrl/nft-membership-40303/view/board-loywtdc1?taskId=225389bb-682e-4954-83e6-461c3adffc10
 
+Userflow state diagrams: https://miro.com/app/board/uXjVN9-cSjo=/?share_link_id=748410878407
+
 ## Deployments
 FobNFT Optimism-Sepolia: https://optimism-sepolia.blockscout.com/address/0x93f6A58CeB439fbe8DDa84B5E02e334aaF6024c4
 
@@ -53,7 +55,7 @@ MembershipNFT.sol is an ERC721 that contains two fields:
 - creationDate
 - name
 
-The NFT is meant intended to be a 1:1 lifetime onchain representation with each physical human being. The NFT is "soulbound" in the sence that it cannot be traded by default.
+The NFT is meant intended to be a 1:1 lifetime onchain representation with each physical human being. The NFT is "soulbound" in the sense that it cannot be traded by default.
 
 The MembershipNFT is expected to be upgraded to a TokenBoundAccount using AccountV3. This way, the MembershipNFT can hold additional NFTs and scale to additional onchain activities.
 
@@ -66,4 +68,13 @@ The Expiration of the Fob is UNIX time in seconds and can be queried via `tokenU
 Minter.sol is the orcestrator contract that users interact with. It is expected to have the roles to issue and manage membershipNFTs and fobNFTs. Minter is also expected to handle payment.
 
 ### /TokenBound/*
-These are a copy of the ERC6551 Registry (https://github.com/erc6551/reference) and AccountV3 (https://github.com/tokenbound/contracts) contracts. This is used for local testing only. It is expected that we use the existing onchain Registry in production per the ERC6551 spec.
+
+These are copies of the ERC6551 Registry (https://github.com/erc6551/reference) and AccountV3 (https://github.com/tokenbound/contracts) contracts. This is used for local testing only. It is expected that we use the existing onchain Registry in production per the ERC6551 spec.
+
+### Tests
+Test suite is in Foundry, install docs here (https://book.getfoundry.sh/getting-started/installation)
+
+ Environment variables below the **Required for running tests** heading must be valid in your .env to run the tests. Tests require forking from latest block on the target chain.
+
+To run tests with 1st level of verbosity:
+`forge test -v`

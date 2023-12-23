@@ -3,23 +3,25 @@ const hre = require("hardhat");
 const Globals = require("./Globals.js");
 
 // As TokenBound
-// Issues new fob to `receiver` as TokenBound `account` as `caller`
+// Issues new fob to `receiver` for `months` as TokenBound `account` as `caller`
 // Expected caller is owner of TokenBound Account
 // `isCallerPay` determines who is paying for the fob (caller vs. account)
-module.exports.issueFobAsTokenBound = async function issueFobAsTokenBound(account, caller, receiver, fobNumber, isCallerPay) {
-    let encodedWithSignature = (Globals.minterContract.interface).encodeFunctionData('issueFob', [receiver, fobNumber]);
-    await executeAsTokenBound(account, caller, isCallerPay, true, encodedWithSignature, Globals.minterContract.address);
-    console.log(`Fob minted with tokenID: ${fobNumber}`);
+module.exports.issueFobAsTokenBound = async function issueFobAsTokenBound(account, caller, receiver, fobNumber, months, isCallerPay) {
+    let payment = (await Globals.minterContract.fobMonthly()).mul(months).toString();
+    let encodedWithSignature = (Globals.minterContract.interface).encodeFunctionData('issueFob', [receiver, fobNumber, months]);
+    await executeAsTokenBound(account, caller, payment, isCallerPay, encodedWithSignature, Globals.minterContract.address);
+    console.log(`Paid ${ethers.utils.formatEther(payment)} ether to issue Fob ${fobNumber} for ${months} months`);
 }
 
 // As TokenBound
-// Extends existing fob as TokenBound `account` as `caller`
+// Extends existing fob for `months` as TokenBound `account` as `caller`
 // Expected caller is owner of TokenBound Account
 // `isCallerPay` determines who is paying for the extension (caller vs. account)
-module.exports.extendFobAsTokenBound = async function extendFobAsTokenBound(account, caller, fobNumber, isCallerPay) {
-    let encodedWithSignature = (Globals.minterContract.interface).encodeFunctionData('extendFob', [fobNumber]);
-    await executeAsTokenBound(account, caller, isCallerPay, true, encodedWithSignature, Globals.minterContract.address);
-    console.log(`Fob extended with tokenID: ${fobNumber}`);
+module.exports.extendFobAsTokenBound = async function extendFobAsTokenBound(account, caller, fobNumber, months, isCallerPay) {
+    let payment = (await Globals.minterContract.fobMonthly()).mul(months).toString();
+    let encodedWithSignature = (Globals.minterContract.interface).encodeFunctionData('extendFob', [fobNumber, months]);
+    await executeAsTokenBound(account, caller, payment, isCallerPay, encodedWithSignature, Globals.minterContract.address);
+    console.log(`Paid ${ethers.utils.formatEther(payment)} ether to extend Fob ${fobNumber} for ${months} months`);
 }
 
 // As TokenBound
@@ -28,7 +30,7 @@ module.exports.extendFobAsTokenBound = async function extendFobAsTokenBound(acco
 // Expected caller is owner of TokenBound Account
 module.exports.transferFobAsTokenBound = async function transferFobAsTokenBound(account, caller, from, to, fobNumber) {
     let encodedWithSignature = (Globals.fobContract.interface).encodeFunctionData('safeTransferFrom(address, address, uint256)', [from, to, fobNumber]);
-    await executeAsTokenBound(account, caller, false, false, encodedWithSignature, Globals.fobContract.address);
+    await executeAsTokenBound(account, caller, 0, false, encodedWithSignature, Globals.fobContract.address);
     console.log(`Fob ${fobNumber} transfered to ${to}`);
 }
 
@@ -50,7 +52,7 @@ module.exports.sendEtherAsTokenBoundAccount = async function sendEtherAsTokenBou
 }
 
 // helper function for creating TokenBounAccount.execute() call
-async function executeAsTokenBound(account, caller, isCallerPay, shouldSendEth, encodedWithSignature, targetContract) {
+async function executeAsTokenBound(account, caller, amountSendEth, isCallerPay, encodedWithSignature, targetContract) {
     await network.provider.request({
         method: "hardhat_impersonateAccount",
         params: [caller],
@@ -62,11 +64,10 @@ async function executeAsTokenBound(account, caller, isCallerPay, shouldSendEth, 
 
     await accountContract.connect(callerSigner).execute(
         targetContract, 
-        shouldSendEth ? ethers.utils.parseEther("1") : 0,
+        amountSendEth,
         encodedWithSignature,
         0,
-        isCallerPay ? { value: ethers.utils.parseEther("1") } : {});
-
+        isCallerPay ? { value: amountSendEth } : {});
 }
 
 // Prints TokenBound metadata

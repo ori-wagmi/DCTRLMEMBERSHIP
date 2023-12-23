@@ -5,7 +5,16 @@ coverage.json
 typechain
 typechain-types
 
-#Hardhat files
-cache
+# Hardhat build
 artifacts
+cache
+out
 
+# Foundry Forge build
+lib/forge-std
+artifacts_forge
+cache_forge
+
+# Local config
+.vscode
+pnpm-lock.yaml

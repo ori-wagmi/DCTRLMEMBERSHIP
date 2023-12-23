@@ -8,7 +8,7 @@ module.exports.main = async function main() {
         console.log(`
         ~~ Fob ~~
         1. Issue new fob
-        2. Reissue existing
+        2. Reissue existing fob
         3. Extend existing fob
         4. Burn existing fob
         5. Query existing fob
@@ -42,26 +42,29 @@ module.exports.main = async function main() {
 
 // issues a new fob with tokenId `fobNumber to `receiver`, `caller` pays
 async function issueFob() {
-    let caller = await Utils.askQuestion("Who is paying for the fob?: ");
+    let caller = await Utils.askQuestion("Who is the caller: ");
     let receiver = await Utils.askQuestion("Who is receiving the fob?: ");
     let fobNumber = Number(await Utils.askQuestion("What is the fob number?: "));
-    await Blockchain.issueFob(caller, receiver, fobNumber);
+    let months = Number(await Utils.askQuestion("Pay for how many months?: "));
+    await Blockchain.issueFob(caller, receiver, fobNumber, months);
 }
 
 // reissues existing fob with tokenId `fobNumber` to `receiver`, `caller` pays.
 // This is the same as calling `burnFob` and `issueFob` in one transaction
 async function reissueFob() {
-    let caller = await Utils.askQuestion("Who is paying for the fob?: ");
+    let caller = await Utils.askQuestion("Who is the caller: ");
     let receiver = await Utils.askQuestion("Who is receiving the fob?: ");
     let fobNumber = Number(await Utils.askQuestion("What is the fob number?: "));
-    await Blockchain.reissueFob(caller, receiver, fobNumber);
+    let months = Number(await Utils.askQuestion("Pay for how many months?: "));
+    await Blockchain.reissueFob(caller, receiver, fobNumber, months);
 }
 
 // extends expiration of existing fob
 async function extendFob() {
-    let caller = await Utils.askQuestion("Who is paying for the extension?: ");
+    let caller = await Utils.askQuestion("Who is the caller?: ");
     let fobNumber = Number(await Utils.askQuestion("What is the fob number?: "));
-    await Blockchain.extendFob(caller, fobNumber);
+    let months = Number(await Utils.askQuestion("Pay for how many months?: "));
+    await Blockchain.extendFob(caller, fobNumber, months);
 }
 
 // burns existing fob. caller is expected to have `BURNER_ROLE`
