@@ -26,15 +26,18 @@ contract MembershipNFT is ERC721, AccessControl {
     constructor(address _multisig) ERC721("Membership", "MEMBER") {
         multisig = _multisig;
         _grantRole(DEFAULT_ADMIN_ROLE, multisig);
+        _grantRole(MINTER_ROLE, multisig);
+        _grantRole(TRANSFER_ROLE, multisig);
     }
     
     function mint(address to, string calldata name) public onlyRole(MINTER_ROLE) {
+        totalSupply += 1; // starts at 1
+
         idToMetadata[totalSupply] = nftMetadata(block.timestamp, name);
         nameToId[keccak256(abi.encode(name))] = totalSupply;
 
         _safeMint(to, totalSupply);
         emit Mint(to, totalSupply);
-        totalSupply += 1;
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControl, ERC721) returns (bool) {
@@ -53,14 +56,22 @@ contract MembershipNFT is ERC721, AccessControl {
         super._safeTransfer(from, to, tokenId, data);
     }
 
-    // multisig is always approved
     function _isApprovedOrOwner(address spender, uint256 tokenId) internal view override returns (bool) {
         address owner = ERC721.ownerOf(tokenId);
-        return (msg.sender == multisig ||
+        return (hasRole(TRANSFER_ROLE, msg.sender) || // TRANSFER_ROLE always approved
             spender == owner ||
             isApprovedForAll(owner, spender) ||
             getApproved(tokenId) == spender
         );
     }
 
+    // Transfers multisig to new address
+    // Revokes DEFAULT_ADMIN_ROLE from old multisig, grants it to new multisig
+    // MINTER_ROLE and TRANSFER_ROLE should be manually managed
+    function setMultisig(address _multisig) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(multisig != _multisig, "already multisig");
+        _grantRole(DEFAULT_ADMIN_ROLE, _multisig);
+        _revokeRole(DEFAULT_ADMIN_ROLE, multisig);
+        multisig = _multisig;
+    }
 }

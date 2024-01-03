@@ -9,48 +9,70 @@ interface IMembershipNFT {
 interface IFobNFT is IERC721 {
     function reissue(address to, uint256 fobNumber) external;
     function issue(address to, uint256 fobNumber) external;
-    function extend(uint256 fobNumber) external;
+    function extend(uint256 fobNumber, uint256 months) external;
 }
 
 contract Minter {
     IMembershipNFT public membershipNFT;
     IFobNFT public fobNFT;
     uint256 public fobMonthly = 1 ether;
-    address public multisig;
+    address public paymentReceiver;
+    address public admin;
 
-    constructor (address _membershipNFT, address _fobNFT, address _multisig) {
+    constructor (address _membershipNFT, address _fobNFT, address _paymentReceiver, address _admin) {
         membershipNFT = IMembershipNFT(_membershipNFT);
         fobNFT = IFobNFT(_fobNFT);
-        multisig = _multisig;
+        paymentReceiver = _paymentReceiver;
+        admin = _admin;
     }
 
     function issueMembership(address to, string calldata name) external {
-        require(to != multisig, "is multisig");
         require(membershipNFT.nameToId(keccak256(abi.encode(name))) == 0, "name exists");
         membershipNFT.mint(to, name);
     }
 
-    function issueMembershipCustodian(string calldata name) external {
-        require(membershipNFT.nameToId(keccak256(abi.encode(name))) == 0, "name exists");
-        membershipNFT.mint(multisig, name);
-    }
-
     function issueFob(address to, uint256 fobNumber) external payable {
         require(msg.value == fobMonthly, "wrong amount");
-        payable(multisig).transfer(msg.value);
+        payable(paymentReceiver).transfer(msg.value);
         fobNFT.issue(to, fobNumber);
     }
 
     function reissueFob(address to, uint256 fobNumber) external payable {
-        require(msg.sender == multisig || msg.sender == fobNFT.ownerOf(fobNumber), "not owner");
+        require(msg.sender == admin || msg.sender == fobNFT.ownerOf(fobNumber), "not owner");
         require(msg.value == fobMonthly, "wrong amount");
-        payable(multisig).transfer(msg.value);
+        payable(paymentReceiver).transfer(msg.value);
         fobNFT.reissue(to, fobNumber);
     }
 
-    function extendFob(uint256 fobNumber) external payable {
-        require(msg.value == fobMonthly, "wrong amount");
-        payable(multisig).transfer(msg.value);
-        fobNFT.extend(fobNumber);
+    function extendFob(uint256 fobNumber, uint256 months) external payable {
+        require(msg.value == (fobMonthly * months), "wrong amount");
+        payable(paymentReceiver).transfer(msg.value);
+        fobNFT.extend(fobNumber, months);
+    }
+
+    /// Admin functions ///
+    function setAdmin(address _admin) external {
+        require(msg.sender == admin, "not admin");
+        admin = _admin;
+    }
+
+    function setPaymentReceiver(address _paymentReceiver) external {
+        require(msg.sender == admin, "not admin");
+        paymentReceiver = _paymentReceiver;
+    }
+
+    function setFobMonthly(uint256 _fobMonthly) external {
+        require(msg.sender == admin, "not admin");
+        fobMonthly = _fobMonthly;
+    }
+
+    function setMembershipNFT(address _membershipNFT) external {
+        require(msg.sender == admin, "not admin");
+        membershipNFT = IMembershipNFT(_membershipNFT);
+    }
+
+    function setFobNFT(address _fobNFT) external {
+        require(msg.sender == admin, "not admin");
+        fobNFT = IFobNFT(_fobNFT);
     }
 }
