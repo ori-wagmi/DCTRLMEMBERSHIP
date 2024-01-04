@@ -2,42 +2,45 @@
 const hre = require("hardhat");
 const Globals = require("./Globals.js");
 
-// Issues new fob to `receiver` with tokenId = `fobNumber`, `caller` pays
-module.exports.issueFob = async function issueFob(caller, receiver, fobNumber) {
+// Issues new fob to `receiver` with tokenId = `fobNumber` for `months`, `caller` pays
+module.exports.issueFob = async function issueFob(caller, receiver, fobNumber, months) {
     await network.provider.request({
         method: "hardhat_impersonateAccount",
         params: [caller],
     });
     callerSigner = await ethers.getSigner(caller);
 
-    await Globals.minterContract.connect(callerSigner).issueFob(receiver, fobNumber, { value: ethers.utils.parseEther("1") });
-    console.log(`Fob issued with tokenID: ${fobNumber}`);
+    let payment = (await Globals.minterContract.fobMonthly()).mul(months).toString();
+    await Globals.minterContract.connect(callerSigner).issueFob(receiver, fobNumber, months, { value: payment });
+    console.log(`Paid ${ethers.utils.formatEther(payment)} ether to issue Fob ${fobNumber} for ${months} months`);
 }
 
-// ReIssues existing fob to `receiver` with tokenId = `fobNumber`, `caller` pays
+// ReIssues existing fob to `receiver` with tokenId = `fobNumber` for `months`, `caller` pays
 // This is the same as calling `burnFob` and `issueFob` in one transaction
-module.exports.reissueFob = async function reissueFob(caller, receiver, fobNumber) {
+module.exports.reissueFob = async function reissueFob(caller, receiver, fobNumber, months) {
     await network.provider.request({
         method: "hardhat_impersonateAccount",
         params: [caller],
     });
     callerSigner = await ethers.getSigner(caller);
 
-    await Globals.minterContract.connect(callerSigner).reissueFob(receiver, fobNumber, { value: ethers.utils.parseEther("1") });
-    console.log(`Fob reissued with tokenID: ${fobNumber}`);
+    let payment = (await Globals.minterContract.fobMonthly()).mul(months).toString();
+    await Globals.minterContract.connect(callerSigner).reissueFob(receiver, fobNumber, months, { value: payment });
+    console.log(`Paid ${ethers.utils.formatEther(payment)} ether to reissue Fob ${fobNumber} for ${months} months`);
 }
 
 
-// Extends existing fob, `caller` pays
-module.exports.extendFob = async function extendFob(caller, fobNumber) {
+// Extends existing fob for `months`, `caller` pays
+module.exports.extendFob = async function extendFob(caller, fobNumber, months) {
     await network.provider.request({
         method: "hardhat_impersonateAccount",
         params: [caller],
     });
     callerSigner = await ethers.getSigner(caller);
 
-    await Globals.minterContract.connect(callerSigner).extendFob(fobNumber, { value: ethers.utils.parseEther("1") });
-    console.log(`Fob extended with tokenID: ${fobNumber}`);
+    let payment = (await Globals.minterContract.fobMonthly()).mul(months).toString();
+    await Globals.minterContract.connect(callerSigner).extendFob(fobNumber, months, { value: payment });
+    console.log(`Paid ${ethers.utils.formatEther(payment)} ether to extend Fob ${fobNumber} for ${months} months`);
 }
 
 // Burns existing fob

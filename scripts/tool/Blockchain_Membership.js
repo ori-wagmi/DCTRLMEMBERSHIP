@@ -6,19 +6,19 @@ const Globals = require("./Globals.js");
 // Does not TokenBound
 // returns tokenId
 module.exports.issueMembership = async function issueMembership(receiver, name) {
-    let mintedTokenId = await Globals.membershipContract.totalSupply();
     await Globals.minterContract.issueMembership(receiver, name);
+    let mintedTokenId = await Globals.membershipContract.totalSupply();
     console.log(`Membership minted to ${receiver} with tokenId ${mintedTokenId}`);
     return mintedTokenId;
 }
 
 // Custodian
-// Mints membershipNFT to multisig with {owner: 'name'}
+// Mints membershipNFT to admin with {owner: 'name'}
 // Does not TokenBound
 // returns tokenId
 module.exports.issueMembershipCustodian = async function issueMembershipCustodian(name) {
+    await Globals.minterContract.issueMembership(await Globals.minterContract.admin(), name);
     let mintedTokenId = await Globals.membershipContract.totalSupply();
-    await Globals.minterContract.issueMembershipCustodian(name);
     console.log("Membership minted to multisig with tokenId: " + mintedTokenId)
     return mintedTokenId;
 }

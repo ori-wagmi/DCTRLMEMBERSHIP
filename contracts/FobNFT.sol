@@ -31,15 +31,15 @@ contract FobNFT is ERC721, AccessControl {
         return idToExpiration[tokenId].toString();
     }
 
-    function issue(address to, uint256 fobNumber) public onlyRole(MINTER_ROLE) {
+    function issue(address to, uint256 fobNumber, uint256 months) public onlyRole(MINTER_ROLE) {
         require(!_exists(fobNumber), "already exists");
-        _issue(to, fobNumber);
+        _issue(to, fobNumber, months);
     }
 
-    function reissue(address to, uint256 fobNumber) public onlyRole(MINTER_ROLE) {
+    function reissue(address to, uint256 fobNumber, uint256 months) public onlyRole(MINTER_ROLE) {
         _requireMinted(fobNumber);
         burn(fobNumber);
-        _issue(to, fobNumber);
+        _issue(to, fobNumber, months);
     }
 
     function extend(uint256 fobNumber, uint256 months) public onlyRole(MINTER_ROLE) {
@@ -58,8 +58,8 @@ contract FobNFT is ERC721, AccessControl {
         return super.supportsInterface(interfaceId);
     }
 
-    function _issue(address to, uint256 fobNumber) internal {
-        idToExpiration[fobNumber] = block.timestamp + 30 days;
+    function _issue(address to, uint256 fobNumber, uint256 months) internal {
+        idToExpiration[fobNumber] = block.timestamp + (30 days * months);
         _safeMint(to, fobNumber);
         emit Mint(to, fobNumber);
     }

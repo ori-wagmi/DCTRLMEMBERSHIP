@@ -31,7 +31,7 @@ contract MembershipNFT is ERC721, AccessControl {
     }
     
     function mint(address to, string calldata name) public onlyRole(MINTER_ROLE) {
-        totalSupply += 1; // starts at 1
+        totalSupply += 1; // tokenId starts at 1
 
         idToMetadata[totalSupply] = nftMetadata(block.timestamp, name);
         nameToId[keccak256(abi.encode(name))] = totalSupply;

@@ -7,15 +7,15 @@ interface IMembershipNFT {
     function nameToId(bytes32 name) external returns (uint256);
 }
 interface IFobNFT is IERC721 {
-    function reissue(address to, uint256 fobNumber) external;
-    function issue(address to, uint256 fobNumber) external;
+    function reissue(address to, uint256 fobNumber, uint256 months) external;
+    function issue(address to, uint256 fobNumber, uint256 months) external;
     function extend(uint256 fobNumber, uint256 months) external;
 }
 
 contract Minter {
     IMembershipNFT public membershipNFT;
     IFobNFT public fobNFT;
-    uint256 public fobMonthly = 1 ether;
+    uint256 public fobMonthly = .1 ether;
     address public paymentReceiver;
     address public admin;
 
@@ -31,17 +31,17 @@ contract Minter {
         membershipNFT.mint(to, name);
     }
 
-    function issueFob(address to, uint256 fobNumber) external payable {
-        require(msg.value == fobMonthly, "wrong amount");
+    function issueFob(address to, uint256 fobNumber, uint256 months) external payable {
+        require(msg.value == (fobMonthly * months), "wrong amount");
         payable(paymentReceiver).transfer(msg.value);
-        fobNFT.issue(to, fobNumber);
+        fobNFT.issue(to, fobNumber, months);
     }
 
-    function reissueFob(address to, uint256 fobNumber) external payable {
+    function reissueFob(address to, uint256 fobNumber, uint256 months) external payable {
         require(msg.sender == admin || msg.sender == fobNFT.ownerOf(fobNumber), "not owner");
-        require(msg.value == fobMonthly, "wrong amount");
+        require(msg.value == (fobMonthly * months), "wrong amount");
         payable(paymentReceiver).transfer(msg.value);
-        fobNFT.reissue(to, fobNumber);
+        fobNFT.reissue(to, fobNumber, months);
     }
 
     function extendFob(uint256 fobNumber, uint256 months) external payable {
