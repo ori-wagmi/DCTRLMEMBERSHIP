@@ -8,6 +8,7 @@ libs = ['node_modules', 'lib']
 solc = "0.8.22"
 remappings = [
     '@openzeppelin=node_modules/@openzeppelin/',
+    '@erc6551=node_modules/erc6551/',
     'hardhat/=node_modules/hardhat/',
     'forge-std/=lib/forge-std/src/'
 ]
