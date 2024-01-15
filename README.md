@@ -70,3 +70,11 @@ Minter.sol is the orcestrator contract that users interact with. It is expected 
 ### /TokenBound/*
 These are a copy of the ERC6551 Registry (https://github.com/erc6551/reference) and AccountV3 (https://github.com/tokenbound/contracts) contracts. This is used for local testing only. It is expected that we use the existing onchain Registry in production per the ERC6551 spec.
 
+### Tests
+Test suite is in Foundry, install docs here (https://book.getfoundry.sh/getting-started/installation)
+
+One environment variable `RPC_NODE_URL` must be set in .env, because the tests require forking from latest block on that chain **at this time**.
+
+To run tests:
+`forge test -v`
+
