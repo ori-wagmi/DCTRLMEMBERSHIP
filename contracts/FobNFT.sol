@@ -18,17 +18,21 @@ contract FobNFT is ERC721, AccessControl {
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
 
     // @var Map a token to ID to an expiration number.
-    // @todo tokenID => block.timestamp?
     mapping(uint256 => uint256) public idToExpiration;
 
     // Standard events
     event Mint(address indexed owner, uint256 indexed fobNumber);
     event Burn(uint256 indexed fobNumber);
     
+    address public admin;
+
     /// @dev Grants admin role to passed address upon initialization.
-    /// @param admin (address)
-    constructor(address admin) ERC721("Fob", "FOB") {
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);    
+    /// @param _admin (address)
+    constructor(address _admin) ERC721("Fob", "FOB") {
+        admin = _admin;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(MINTER_ROLE, admin);
+        _grantRole(BURNER_ROLE, admin);
     }
 
     /// @notice Given a token ID, returns the expiry
@@ -40,31 +44,34 @@ contract FobNFT is ERC721, AccessControl {
         return idToExpiration[tokenId].toString();
     }
 
-    /// @notice Mint a new token ID to an address.
-    /// @dev    Must be non-existant ID. Minter role only.
+    /// @notice Mint a new token ID for m months.
+    /// @dev   Must be non-existant ID. Minter role only.
     /// @param to (adddress)
     /// @param fobNumber (uint256)
-    function issue(address to, uint256 fobNumber) public onlyRole(MINTER_ROLE) {
+    /// @param months (uint256)
+    function issue(address to, uint256 fobNumber, uint256 months) public onlyRole(MINTER_ROLE) {
         require(!_exists(fobNumber), "already exists");
-        _issue(to, fobNumber);
+        _issue(to, fobNumber, months);
     }
 
-    /// @notice Burn and re-mint a given token ID.
+    /// @notice Burn and re-mint a given token ID for m months.
     /// @dev Must be an existing ID. Minter role only.
     /// @param to (address)
     /// @param fobNumber (uint256)
-    function reissue(address to, uint256 fobNumber) public onlyRole(MINTER_ROLE) {
+    /// @param months (uint256)
+    function reissue(address to, uint256 fobNumber, uint256 months) public onlyRole(MINTER_ROLE) {
         _requireMinted(fobNumber);
         burn(fobNumber);
-        _issue(to, fobNumber);
+        _issue(to, fobNumber, months);
     }
 
-    /// @notice Extend the expiry time for a given token ID.
+    /// @notice Extend the expiry time for a given token ID in months.
     /// @dev Must be an existing ID, adds 30 days to expiry. Minter role only.
     /// @param fobNumber (uint256)
-    function extend(uint256 fobNumber) public onlyRole(MINTER_ROLE) {
+    /// @param months (uint256)
+    function extend(uint256 fobNumber, uint256 months) public onlyRole(MINTER_ROLE) {
         _requireMinted(fobNumber);
-        idToExpiration[fobNumber] = idToExpiration[fobNumber] + 30 days;
+        idToExpiration[fobNumber] = idToExpiration[fobNumber] + (30 days * months);
     }
 
     /// @notice Destroy a given token ID.
@@ -83,12 +90,24 @@ contract FobNFT is ERC721, AccessControl {
     }
 
     /// @notice Issue a new token with an expiration.
-    /// @dev Internal mint function, add 30 days to current timestamp, emit mint event.
+    /// @dev Internal mint function, add 30 days to current, emit mint event.
     /// @param to (address)
     /// @param fobNumber (uint256)
-    function _issue(address to, uint256 fobNumber) internal {
-        idToExpiration[fobNumber] = block.timestamp + 30 days;
+    /// @param months (uint256)
+    function _issue(address to, uint256 fobNumber, uint256 months) internal {
+        idToExpiration[fobNumber] = block.timestamp + (30 days * months);
         _safeMint(to, fobNumber);
         emit Mint(to, fobNumber);
+    }
+
+    /// @notice Set a new admin.
+    /// @dev Grants DEFAULT_ADMIN_ROLE to new admin, revokes old.
+    /// @dev Sender must already have DEFAULT_ADMIN_ROLE and be admin.
+    /// @param _admin (address)
+    function setAdmin(address _admin) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(admin != _admin, "already admin");
+        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        _revokeRole(DEFAULT_ADMIN_ROLE, admin);
+        admin = _admin;
     }
 }

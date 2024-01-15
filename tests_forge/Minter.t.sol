@@ -17,8 +17,7 @@ contract MinterTest is Test {
     Minter minter;
     
     address multisig;
-    address roleMemberAdmin;
-    address roleHaver;
+    address admin;
     address testAddress;
 
     address alanah;
@@ -27,65 +26,68 @@ contract MinterTest is Test {
     string memberName = "Alanah";
 
     function setUp() public {
-        //Fork Mainnet
+        // Fork Mainnet
         vm.createSelectFork(vm.envString("RPC_URL_MAINNET"));
 
-        //Canonical ERC-6551 Registry on Mainnet
+        // Canonical ERC-6551 Registry on Mainnet
         registry = 0x000000006551c19487814612e58FE06813775758;
 
-        //Default AccountV3Upgradeable Implementation on Mainnet
+        // Default AccountV3Upgradeable Implementation on Mainnet
         accountImpl = 0x41C8f39463A868d3A88af00cd0fe7102F30E44eC;
         
-        //EOAs/Signers
-        multisig = roleMemberAdmin = vm.addr(1);
-        roleHaver = vm.addr(2);
+        // EOAs/Signers
+        multisig = vm.addr(1);
+        admin = vm.addr(2);
         alanah = vm.addr(3);
         benny = vm.addr(4);
 
-        //Fund
+        // Fund
         vm.deal(multisig, 10 ether);
-        vm.deal(roleHaver, 10 ether); //EOA Admin
+        vm.deal(admin, 10 ether); // EOA Admin
         vm.deal(alanah, 10 ether);
         vm.deal(benny, 10 ether);
 
-        //@dev Multisig/Admin is deployer.
-        vm.startPrank(roleMemberAdmin);
+        // Admin is deployer.
+        vm.startPrank(admin);
 
-        //@dev Multisig assigned DEFAULT_ADMIN_ROLE in constructors.
-        //@dev Minter is entrypoint for membership, fob.
-        //Contracts
+        // Contracts
+        // Multisig assigned DEFAULT_ADMIN_ROLE in constructors.
+        // Minter is entrypoint for membership, fob.
         membership = new MembershipNFT(multisig);
         fob = new FobNFT(multisig);
         minter = new Minter(
             address(membership),
             address(fob),
-            multisig
+            multisig,
+            admin
         );
         testAddress = address(this);
 
         console.log("Minter: ", address(minter));
         console.log("");
 
-        setUpRoles();
         vm.stopPrank();
+        setUpRoles();
     }
 
-    //@dev Grant necessary AccessControl Roles
+    //@dev Bestow AccessControl Roles to admin & Minter contract, except Transferer
     function setUpRoles() public {
+        vm.startPrank(multisig);
         membership.grantRole(membership.MINTER_ROLE(), address(minter));
-        membership.grantRole(membership.MINTER_ROLE(), roleHaver);
-        membership.grantRole(membership.TRANSFER_ROLE(), roleHaver);
-        fob.grantRole(fob.MINTER_ROLE(), roleHaver);
+        membership.grantRole(membership.MINTER_ROLE(), admin);
+        //membership.grantRole(membership.TRANSFER_ROLE(), admin);
+        fob.grantRole(fob.MINTER_ROLE(), admin);
         fob.grantRole(fob.MINTER_ROLE(), address(minter));
-        fob.grantRole(fob.BURNER_ROLE(), roleHaver);
+        fob.grantRole(fob.BURNER_ROLE(), admin);
         fob.grantRole(fob.BURNER_ROLE(), address(minter));
+        vm.stopPrank();
     }
 
     function testAccountsRoles() public view {
         console.log("***** Accounts ******");
         console.log("This contract: ", testAddress);
-        console.log("Multisig/MemberAdmin: ", multisig);
-        console.log("roleHaver: ", roleHaver);
+        console.log("Multisig: ", multisig);
+        console.log("admin: ", admin);
         console.log("alanah: ", alanah);
         console.log("benny: ", benny);
         console.log("");
@@ -111,132 +113,137 @@ contract MinterTest is Test {
         vm.stopPrank();
     }
 
-    function testMembershipIssueCustody() public {
-        vm.startPrank(roleMemberAdmin);
-
-        assertEq(0, membership.balanceOf(multisig));
-        minter.issueMembershipCustodian("Benny");
-        assertEq(1, membership.balanceOf(multisig));
-
-        vm.stopPrank();
-    }
-
     function testMembershipName() public {
         testMembershipIssue();
 
-        assertEq(0, membership.nameToId(keccak256(abi.encode(memberName))));
+        assertEq(1, membership.nameToId(keccak256(abi.encode(memberName))));
 
-        (uint256 createDate, string memory metaName) = membership.idToMetadata(0);
-        console.log("ID 0 Name: ", metaName );
-        console.log("ID 0 Created: ", createDate);
+        (uint256 createDate, string memory metaName) = membership.idToMetadata(1);
+        console.log("ID 1 Name: ", metaName );
+        console.log("ID 1 Created: ", createDate);
         console.log("");
     }
     function testMembershipTransfer() public {
         testMembershipIssue();
 
-        // @dev Attempt standard transfer Membership ID 0 as normal owner
+        // Attempt standard transfer Membership ID 1 as normal owner
         vm.startPrank(alanah);
         assertEq(0, membership.balanceOf(benny));
-        // @dev Lacks Transferer Role
+        // Expect failure, lack Transferer Role
         vm.expectRevert();
-        membership.transferFrom(alanah, benny, 0);
+        // Transfer Membership ID 1
+        membership.transferFrom(alanah, benny, 1);
         assertEq(0, membership.balanceOf(benny));
         vm.stopPrank();
 
-        // Attempt transfer as multisig
-        vm.startPrank(multisig);
+        // Attempt transfer as admin, expect only Multisig to be able to clawback NFTs
+        vm.startPrank(admin);
         assertEq(0, membership.balanceOf(benny));
-        // @dev Lacks Transferer Role
+        // Expect failure, lacks Transferer Role
         vm.expectRevert();
-        membership.transferFrom(alanah, benny, 0);
+        membership.transferFrom(alanah, benny, 1);
         assertEq(0, membership.balanceOf(benny));
         vm.stopPrank();
 
-        // Attempt transfer again as roleHaver
-        // Requires approval.
+        // Attempt transfer again as approved spender
         vm.prank(alanah);
-        membership.approve(roleHaver, 0);
+        membership.approve(admin, 1);
     
         assertEq(0, membership.balanceOf(benny));
-        // @dev Has Transferer Role
-        vm.prank(roleHaver);
-        membership.transferFrom(alanah, benny, 0);
+        vm.prank(admin);
+        // Expect failure, lacks Transferer Role
+        vm.expectRevert();
+        membership.transferFrom(alanah, benny, 1);
+        assertEq(0, membership.balanceOf(benny));
+
+        // Attempt as multisig, sole Transferer
+        vm.prank(multisig);
+        membership.transferFrom(alanah, benny, 1);
         assertEq(1, membership.balanceOf(benny));
     }
 
     function testFobIssue() public {
-        //Prepare Membership NFT
+        // Prepare Membership NFT
         testMembershipIssue();
         uint tokenId = membership.nameToId(keccak256(abi.encode(memberName)));
+        console.log("Fob Number issued: ", tokenId);
 
         //@todo Does frontend handle selecting fob tokenID (fobNumber)?
-        address membershipTBA = calculateTBA(0);
-        uint fobFee = minter.fobMonthly();
-        console.log("TBA for ID 0:", membershipTBA);
+        address membershipTBA = calculateTBA(1);
+        uint fobDuesAnnual = minter.fobMonthly() * 12; 
+        console.log("TBA for ID 1:", membershipTBA);
         console.log("");
 
-        vm.startPrank(roleHaver);
+        vm.startPrank(admin);
 
         vm.expectEmit();
         emit FobNFT.Mint(membershipTBA, tokenId);
 
-        minter.issueFob{value: fobFee}(membershipTBA, tokenId);
+        minter.issueFob{value: fobDuesAnnual}(membershipTBA, tokenId, 12);
 
-        //check timestamp
-        uint expiry = fob.idToExpiration(0);
+        // Check timestamp
+        uint expiry = fob.idToExpiration(1);
         assertNotEq(expiry, 0);
-        //console.log("Expiry timestamp: ", expiry);
+        console.log("Fob 1's Expiry: ", expiry);
+        console.log("");
 
         vm.stopPrank();
     }
 
     function testFobReissue() public {
-        //Setup issuance
+        // Setup issuance
         testFobIssue();
 
-        address membershipTBA = calculateTBA(0);
-        uint fobFee = minter.fobMonthly();
-        uint expiry = fob.idToExpiration(0);
-        console.log("TBA for ID 0:", membershipTBA);
+        address membershipTBA = calculateTBA(1);
+        uint fobDuesHalfYear = minter.fobMonthly() * 6;
+        uint expiry = fob.idToExpiration(1);
+        console.log("TBA for ID 1:", membershipTBA);
         console.log("");
 
-        //Scenario 1: Expired
-        //Elapse time ~one block after expiry
-        vm.warp(expiry + 13 seconds);
-        vm.startPrank(multisig);
+        // Scenario 1: Expired
+        // Elapse time ~one block after expiry
+        vm.warp(expiry + 12 seconds);
+        vm.startPrank(admin);
 
         vm.expectEmit();
-        emit FobNFT.Burn(0);
+        emit FobNFT.Burn(1);
         vm.expectEmit();
-        emit FobNFT.Mint(membershipTBA, 0);
+        emit FobNFT.Mint(membershipTBA, 1);
 
-        //Reissue with fee
-        minter.reissueFob{value: fobFee}(membershipTBA, 0);
+        // Reissue for 6 months
+        minter.reissueFob{value: fobDuesHalfYear}(membershipTBA, 1, 6);
 
-        assertGt(fob.idToExpiration(0), expiry + 13);
+        // Check expiration increased.
+        assertGt(fob.idToExpiration(1), expiry + 12);
 
         vm.expectEmit();
-        emit FobNFT.Burn(0);
+        emit FobNFT.Burn(1);
         vm.expectEmit();
-        emit FobNFT.Mint(membershipTBA, 0);
+        emit FobNFT.Mint(membershipTBA, 1);
 
-        //Scenario 2: Accidental Reissue
-        minter.reissueFob{value: fobFee}(membershipTBA, 0);
+        // Scenario 2: Accidental Reissue
+        minter.reissueFob{value: fobDuesHalfYear/6}(membershipTBA, 1, 1);
         
+        // Check expiration increased by 1 month
+        // @todo But shouldn't this account for existing expiry credit?
+        assertEq(fob.idToExpiration(1), block.timestamp + 30 days);
         vm.stopPrank();
     }
 
     function testFobExtend() public {
-         //Setup issuance
+         // Setup issuance
         testFobIssue();
         uint fobFee = minter.fobMonthly();
-        uint expiry = fob.idToExpiration(0);
-        //Elapse time ~one block til expiry
+        uint expiry = fob.idToExpiration(1);
+        // Elapse time ~one block til expiry
         vm.warp(expiry - 13 seconds);
 
-        vm.startPrank(roleHaver);
-        minter.extendFob{value: fobFee}(0);
-        assertLt(expiry, fob.idToExpiration(0));
+        vm.startPrank(admin);
+        // Extend Fob 1 for one month
+        minter.extendFob{value: fobFee}(1, 1);
+
+        //Ensure expiry increased by 30 days
+        assertEq(expiry + 30 days, fob.idToExpiration(1));
 
         vm.stopPrank();
     }
@@ -244,11 +251,11 @@ contract MinterTest is Test {
     function testFobBurn() public {
         testFobIssue();
         
-        address membershipTBA = calculateTBA(0);
+        address membershipTBA = calculateTBA(1);
         assertEq(1, fob.balanceOf(membershipTBA));
 
-        vm.startPrank(roleHaver);
-        fob.burn(0);
+        vm.startPrank(admin);
+        fob.burn(1);
 
         assertEq(0, fob.balanceOf(membershipTBA));
 
@@ -258,12 +265,12 @@ contract MinterTest is Test {
     function calculateTBA(uint tokenId) public view returns(address) {
         // Calculate TBA
         address membershipTBA = ERC6551AccountLib.computeAddress(
-            address(registry), //registry, 
-            address(accountImpl), //_implementation,
-            0, //_salt,
-            1, //chainId,
-            address(membership), //tokenContract,
-            tokenId //tokenId
+            address(registry), // registry, 
+            address(accountImpl), // _implementation,
+            0, // _salt,
+            1, // chainId,
+            address(membership), // tokenContract,
+            tokenId // tokenId
         );
 
         return(membershipTBA);

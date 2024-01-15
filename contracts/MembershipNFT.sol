@@ -40,6 +40,8 @@ contract MembershipNFT is ERC721, AccessControl {
     constructor(address _multisig) ERC721("Membership", "MEMBER") {
         multisig = _multisig;
         _grantRole(DEFAULT_ADMIN_ROLE, multisig);
+        _grantRole(MINTER_ROLE, multisig);
+        _grantRole(TRANSFER_ROLE, multisig);
     }
     
     /// @notice Mint a new token to an address, with a name.
@@ -47,13 +49,14 @@ contract MembershipNFT is ERC721, AccessControl {
     /// @param to (address)
     /// @param name (string)
     function mint(address to, string calldata name) public onlyRole(MINTER_ROLE) {
+        totalSupply += 1; // tokenId starts at 1
+
         idToMetadata[totalSupply] = nftMetadata(block.timestamp, name);
         // @todo check-effects-interactions
         nameToId[keccak256(abi.encode(name))] = totalSupply;
 
         _safeMint(to, totalSupply);
         emit Mint(to, totalSupply);
-        totalSupply += 1;
     }
 
     /// @inheritdoc ERC721
@@ -86,10 +89,21 @@ contract MembershipNFT is ERC721, AccessControl {
     /// @return flag (bool), returns true if msg.sender is Admin (multisig), spender is equivalent to owner, owner carries contract approval or spender carries token approval.
     function _isApprovedOrOwner(address spender, uint256 tokenId) internal view override returns (bool) {
         address owner = ERC721.ownerOf(tokenId);
-        return (msg.sender == multisig ||
+        // TRANSFER_ROLE always approved
+        return (hasRole(TRANSFER_ROLE, msg.sender) || 
             spender == owner ||
             isApprovedForAll(owner, spender) ||
             getApproved(tokenId) == spender
         );
+    }
+
+    /// @notice Transfers multisig to new address
+    /// @dev Revokes DEFAULT_ADMIN_ROLE from old multisig, grants it new multisig
+    /// @dev MINTER_ROLE and TRANSFER_ROLE are set in constructor
+    function setMultisig(address _multisig) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(multisig != _multisig, "already multisig");
+        _grantRole(DEFAULT_ADMIN_ROLE, _multisig);
+        _revokeRole(DEFAULT_ADMIN_ROLE, multisig);
+        multisig = _multisig;
     }
 }
