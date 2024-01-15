@@ -7,7 +7,7 @@ interface IMembershipNFT {
     function mint(address to, string calldata name) external;
     function nameToId(bytes32 name) external returns (uint256);
 }
-/// @dev Minter can issue, reissue or extend.
+/// @dev Minter can issue, reissue, or extend.
 interface IFobNFT is IERC721 {
     function reissue(address to, uint256 fobNumber, uint256 months) external;
     function issue(address to, uint256 fobNumber, uint256 months) external;
@@ -15,14 +15,15 @@ interface IFobNFT is IERC721 {
 }
 
 /// @title Minter
-/// @author Ori Wagmi (ori-wagmi)
 /// @notice Minter contract interface for Membership & Fob NFTs
 contract Minter {
     IMembershipNFT public membershipNFT;
     IFobNFT public fobNFT;
-    //@var Monthly fee for Fob access.
+    
+    // Monthly fee for Fob access.
     uint256 public fobMonthly = .1 ether;
-    //@var Multisig
+    
+    // Multisig
     address public paymentReceiver; 
     address public admin;
 
@@ -39,7 +40,7 @@ contract Minter {
     }
 
     /// @notice Issue a Membership NFT with name to an address.
-    /// @dev Cannot issue to Admin, no namehash collision.
+    /// @dev No namehash collision allowed.
     /// @param to (address)
     /// @param name (string)
     function issueMembership(address to, string calldata name) external {

@@ -8,16 +8,15 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 // import "hardhat/console.sol";
 
 /// @title FobNFT
-/// @author Ori Wagmi (ori-wagmi)
 /// @notice Fob NFT with access control
 contract FobNFT is ERC721, AccessControl {
     using Strings for uint256;
 
-    // @var Special roles for mint, burn access.
+    // Special roles for accessing mint, burn functions.
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
 
-    // @var Map a token to ID to an expiration number.
+    // Map a token ID to an expiration number.
     mapping(uint256 => uint256) public idToExpiration;
 
     // Standard events
@@ -26,7 +25,7 @@ contract FobNFT is ERC721, AccessControl {
     
     address public admin;
 
-    /// @dev Grants admin role to passed address upon initialization.
+    /// @dev Grants Default Admin, Minter, and Burner role to address upon initialization.
     /// @param _admin (address)
     constructor(address _admin) ERC721("Fob", "FOB") {
         admin = _admin;
@@ -35,17 +34,17 @@ contract FobNFT is ERC721, AccessControl {
         _grantRole(BURNER_ROLE, admin);
     }
 
-    /// @notice Given a token ID, returns the expiry
-    /// @dev    Expiry as string, not protocol prefix as required for URI.
+    /// @notice Given a token ID, returns the expiry timestamp.
+    /// @dev Expiry as string, not protocol prefix as required for URI.
     /// @param tokenId (uint256)
-    /// @return  (string)
+    /// @return Timestamp as string.
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireMinted(tokenId);
         return idToExpiration[tokenId].toString();
     }
 
-    /// @notice Mint a new token ID for m months.
-    /// @dev   Must be non-existant ID. Minter role only.
+    /// @notice Mint a new token ID for `months`.
+    /// @dev Must be non-existant ID. Minter role only.
     /// @param to (adddress)
     /// @param fobNumber (uint256)
     /// @param months (uint256)
@@ -54,7 +53,7 @@ contract FobNFT is ERC721, AccessControl {
         _issue(to, fobNumber, months);
     }
 
-    /// @notice Burn and re-mint a given token ID for m months.
+    /// @notice Burn and re-mint a given token ID for `months`.
     /// @dev Must be an existing ID. Minter role only.
     /// @param to (address)
     /// @param fobNumber (uint256)
@@ -65,8 +64,8 @@ contract FobNFT is ERC721, AccessControl {
         _issue(to, fobNumber, months);
     }
 
-    /// @notice Extend the expiry time for a given token ID in months.
-    /// @dev Must be an existing ID, adds 30 days to expiry. Minter role only.
+    /// @notice Extend the expiry time for a given token ID in increments of 30 days.
+    /// @dev Must be an existing ID, adds 30 days * months to expiry. Minter role only.
     /// @param fobNumber (uint256)
     /// @param months (uint256)
     function extend(uint256 fobNumber, uint256 months) public onlyRole(MINTER_ROLE) {
@@ -90,7 +89,7 @@ contract FobNFT is ERC721, AccessControl {
     }
 
     /// @notice Issue a new token with an expiration.
-    /// @dev Internal mint function, add 30 days to current, emit mint event.
+    /// @dev Internal mint function, add 30 days * months to current.
     /// @param to (address)
     /// @param fobNumber (uint256)
     /// @param months (uint256)

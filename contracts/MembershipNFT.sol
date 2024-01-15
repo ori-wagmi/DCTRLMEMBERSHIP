@@ -8,14 +8,13 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 // import "hardhat/console.sol";
 
 /// @title MembershipNFT
-/// @author Ori Wagmi (ori-wagmi)
 /// @notice Membership NFT with access control
 contract MembershipNFT is ERC721, AccessControl {
 
-    // @var Init supply at zero.
+    // Initialize supply at zero.
     uint256 public totalSupply = 0;
 
-    // @var Special roles for mint, transfer access.
+    // Special roles accessing mint and transfer functions.
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant TRANSFER_ROLE = keccak256("TRANSFER_ROLE");
 
@@ -23,16 +22,15 @@ contract MembershipNFT is ERC721, AccessControl {
         uint256 creationDate;
         string name;
     }
-    // @var Maps a token ID to a metadata struct.
+    // Maps a token ID to a metadata struct.
     mapping(uint256 => nftMetadata) public idToMetadata;
 
-    // @var Maps bytes to a token ID.
+    // Maps the keccak hash of name metadata to a token ID.
     mapping(bytes32 => uint256) public nameToId;
 
-    // @var The multisig account.
+    // Multisig account.
     address public multisig;
 
-    // Standard events
     event Mint(address indexed name, uint256 indexed tokenId);
 
     /// @dev Sets the multisig account with Admin role upon initialization.
@@ -45,14 +43,14 @@ contract MembershipNFT is ERC721, AccessControl {
     }
     
     /// @notice Mint a new token to an address, with a name.
-    /// @dev Store metadata, set name-hash to token ID, mint, emit, increment supply.
+    /// @dev Store timestamp and name in metadata,
+    /// @dev Store namehash at tokenId, indexed from 1, mint increment supply.
     /// @param to (address)
     /// @param name (string)
     function mint(address to, string calldata name) public onlyRole(MINTER_ROLE) {
         totalSupply += 1; // tokenId starts at 1
 
         idToMetadata[totalSupply] = nftMetadata(block.timestamp, name);
-        // @todo check-effects-interactions
         nameToId[keccak256(abi.encode(name))] = totalSupply;
 
         _safeMint(to, totalSupply);
@@ -98,8 +96,8 @@ contract MembershipNFT is ERC721, AccessControl {
     }
 
     /// @notice Transfers multisig to new address
-    /// @dev Revokes DEFAULT_ADMIN_ROLE from old multisig, grants it new multisig
-    /// @dev MINTER_ROLE and TRANSFER_ROLE are set in constructor
+    /// @dev Revokes DEFAULT_ADMIN_ROLE from old multisig, grants it to new multisig
+    /// @dev MINTER_ROLE and TRANSFER_ROLE are set in constructor, but should be manually managed.
     function setMultisig(address _multisig) public onlyRole(DEFAULT_ADMIN_ROLE) {
         require(multisig != _multisig, "already multisig");
         _grantRole(DEFAULT_ADMIN_ROLE, _multisig);
