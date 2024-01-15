@@ -27,7 +27,7 @@ contract MinterTest is Test {
 
     function setUp() public {
         // Fork Mainnet
-        vm.createSelectFork(vm.envString("RPC_URL_MAINNET"));
+        vm.createSelectFork(vm.envString("RPC_NODE_URL"));
 
         // Canonical ERC-6551 Registry on Mainnet
         registry = 0x000000006551c19487814612e58FE06813775758;
@@ -43,7 +43,8 @@ contract MinterTest is Test {
 
         // Fund
         vm.deal(multisig, 10 ether);
-        vm.deal(admin, 10 ether); // EOA Admin
+        // EOA Admin
+        vm.deal(admin, 10 ether);
         vm.deal(alanah, 10 ether);
         vm.deal(benny, 10 ether);
 
@@ -83,27 +84,6 @@ contract MinterTest is Test {
         vm.stopPrank();
     }
 
-    function testAccountsRoles() public view {
-        console.log("***** Accounts ******");
-        console.log("This contract: ", testAddress);
-        console.log("Multisig: ", multisig);
-        console.log("admin: ", admin);
-        console.log("alanah: ", alanah);
-        console.log("benny: ", benny);
-        console.log("");
-
-        console.log("***** Roles ******");
-        console.log("Membership MINTER_ROLE: ");
-        console.logBytes32(membership.MINTER_ROLE());
-        console.log("Membership TRANSFER_ROLE: ");
-        console.logBytes32(membership.TRANSFER_ROLE());
-        console.log("Fob MINTER_ROLE: ");
-        console.logBytes32(fob.MINTER_ROLE());
-        console.log("Fob BURNER_ROLE: ");
-        console.logBytes32(fob.BURNER_ROLE());
-        console.log("");
-    }
-
     function testMembershipIssue() public {
         vm.startPrank(testAddress);
 
@@ -115,12 +95,21 @@ contract MinterTest is Test {
 
     function testMembershipName() public {
         testMembershipIssue();
+        uint targetId = 1;
 
-        assertEq(1, membership.nameToId(keccak256(abi.encode(memberName))));
+        // Check namehash corresponds to ID
+        assertEq(targetId, membership.nameToId(keccak256(abi.encode(memberName))));
 
         (uint256 createDate, string memory metaName) = membership.idToMetadata(1);
-        console.log("ID 1 Name: ", metaName );
-        console.log("ID 1 Created: ", createDate);
+        
+        // Check retrieved metadata name is equal to namehash
+        assertEq(keccak256(abi.encode(metaName)), keccak256(abi.encode(memberName)));
+
+        // Check creation date agrees with this block.
+        assertEq(createDate, block.timestamp);
+
+        console.log("ID %d Name: %s", targetId, metaName );
+        console.log("ID %d Created: %d", targetId, createDate);
         console.log("");
     }
     function testMembershipTransfer() public {
@@ -168,7 +157,7 @@ contract MinterTest is Test {
         uint tokenId = membership.nameToId(keccak256(abi.encode(memberName)));
         console.log("Fob Number issued: ", tokenId);
 
-        //@todo Does frontend handle selecting fob tokenID (fobNumber)?
+        // Frontend handles Fob ID selection.
         address membershipTBA = calculateTBA(1);
         uint fobDuesAnnual = minter.fobMonthly() * 12; 
         console.log("TBA for ID 1:", membershipTBA);
@@ -197,6 +186,9 @@ contract MinterTest is Test {
         address membershipTBA = calculateTBA(1);
         uint fobDuesHalfYear = minter.fobMonthly() * 6;
         uint expiry = fob.idToExpiration(1);
+
+        // NB: Assuming 30 day months...
+        assertEq(expiry, (block.timestamp + 30 days * 12));
         console.log("TBA for ID 1:", membershipTBA);
         console.log("");
 
@@ -213,19 +205,19 @@ contract MinterTest is Test {
         // Reissue for 6 months
         minter.reissueFob{value: fobDuesHalfYear}(membershipTBA, 1, 6);
 
-        // Check expiration increased.
-        assertGt(fob.idToExpiration(1), expiry + 12);
+        // Check expiration equals reissue time + 6 months
+        assertEq(fob.idToExpiration(1), block.timestamp + (30 days * 6));
 
         vm.expectEmit();
         emit FobNFT.Burn(1);
         vm.expectEmit();
         emit FobNFT.Mint(membershipTBA, 1);
 
-        // Scenario 2: Accidental Reissue
+        // Scenario 2: Accidental Reissue to same TBA
         minter.reissueFob{value: fobDuesHalfYear/6}(membershipTBA, 1, 1);
         
         // Check expiration increased by 1 month
-        // @todo But shouldn't this account for existing expiry credit?
+        // NB: Replaces current expiry.
         assertEq(fob.idToExpiration(1), block.timestamp + 30 days);
         vm.stopPrank();
     }
@@ -236,7 +228,7 @@ contract MinterTest is Test {
         uint fobFee = minter.fobMonthly();
         uint expiry = fob.idToExpiration(1);
         // Elapse time ~one block til expiry
-        vm.warp(expiry - 13 seconds);
+        vm.warp(expiry - 12 seconds);
 
         vm.startPrank(admin);
         // Extend Fob 1 for one month
@@ -260,6 +252,28 @@ contract MinterTest is Test {
         assertEq(0, fob.balanceOf(membershipTBA));
 
         vm.stopPrank();
+    }
+
+    /** Utilities */
+    function testAccountsRoles() internal view {
+        console.log("***** Accounts ******");
+        console.log("This contract: ", testAddress);
+        console.log("Multisig: ", multisig);
+        console.log("admin: ", admin);
+        console.log("alanah: ", alanah);
+        console.log("benny: ", benny);
+        console.log("");
+
+        console.log("***** Roles ******");
+        console.log("Membership MINTER_ROLE: ");
+        console.logBytes32(membership.MINTER_ROLE());
+        console.log("Membership TRANSFER_ROLE: ");
+        console.logBytes32(membership.TRANSFER_ROLE());
+        console.log("Fob MINTER_ROLE: ");
+        console.logBytes32(fob.MINTER_ROLE());
+        console.log("Fob BURNER_ROLE: ");
+        console.logBytes32(fob.BURNER_ROLE());
+        console.log("");
     }
 
     function calculateTBA(uint tokenId) public view returns(address) {
