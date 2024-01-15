@@ -5,7 +5,7 @@ cache_path  = 'cache_forge'
 test = 'tests_forge'
 libs = ['node_modules', 'lib']
 
-solc = "0.8.22"
+
 remappings = [
     '@openzeppelin=node_modules/@openzeppelin/',
     '@erc6551=node_modules/erc6551/',
