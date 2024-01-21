@@ -30,10 +30,10 @@ contract MinterTest is Test {
         vm.createSelectFork(vm.envString("RPC_NODE_URL"));
 
         // Canonical ERC-6551 Registry on Mainnet
-        registry = 0x000000006551c19487814612e58FE06813775758;
+        registry = vm.envAddress("REGISTRY_6551");
 
         // Default AccountV3Upgradeable Implementation on Mainnet
-        accountImpl = 0x41C8f39463A868d3A88af00cd0fe7102F30E44eC;
+        accountImpl = vm.envAddress("ACCOUNT_6551");
         
         // EOAs/Signers
         multisig = vm.addr(1);
@@ -278,11 +278,12 @@ contract MinterTest is Test {
 
     function calculateTBA(uint tokenId) public view returns(address) {
         // Calculate TBA
+        uint256 chainId = vm.envUint("CHAIN_ID");
         address membershipTBA = ERC6551AccountLib.computeAddress(
             address(registry), // registry, 
             address(accountImpl), // _implementation,
             0, // _salt,
-            1, // chainId,
+            chainId, // chainId,
             address(membership), // tokenContract,
             tokenId // tokenId
         );

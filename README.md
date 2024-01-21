@@ -68,13 +68,13 @@ The Expiration of the Fob is UNIX time in seconds and can be queried via `tokenU
 Minter.sol is the orcestrator contract that users interact with. It is expected to have the roles to issue and manage membershipNFTs and fobNFTs. Minter is also expected to handle payment.
 
 ### /TokenBound/*
-These are a copy of the ERC6551 Registry (https://github.com/erc6551/reference) and AccountV3 (https://github.com/tokenbound/contracts) contracts. This is used for local testing only. It is expected that we use the existing onchain Registry in production per the ERC6551 spec.
+These are copies of the ERC6551 Registry (https://github.com/erc6551/reference) and AccountV3 (https://github.com/tokenbound/contracts) contracts. This is used for local testing only. It is expected that we use the existing onchain Registry in production per the ERC6551 spec.
 
 ### Tests
 Test suite is in Foundry, install docs here (https://book.getfoundry.sh/getting-started/installation)
 
-One environment variable `RPC_NODE_URL` must be set in .env, because the tests require forking from latest block on that chain **at this time**.
+ Environment variables below the **Required for running tests** heading must be valid in your .env to run the tests. Tests require forking from latest block on the target chain.
 
-To run tests:
+To run tests with 1st level of verbosity:
 `forge test -v`
 
