@@ -79,7 +79,7 @@ contract Minter {
     /// @dev No namehash collision allowed.
     /// @param to (address)
     /// @param name (string)
-    function issueMembership(address to, string calldata name) external {
+    function issueMembership(address to, string calldata name) external returns (address) {
         uint256 tokenId = membershipNFT.nameToId(keccak256(abi.encode(name)));
         require(tokenId == 0, "name exists");
         membershipNFT.mint(to, name);

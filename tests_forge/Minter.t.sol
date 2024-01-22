@@ -12,6 +12,7 @@ import "contracts/Minter.sol";
 contract MinterTest is Test {
     address registry;
     address accountImpl;
+    bytes32 salt;
     MembershipNFT membership;
     FobNFT fob;
     Minter minter;
@@ -34,6 +35,8 @@ contract MinterTest is Test {
 
         // Default AccountV3Upgradeable Implementation on Mainnet
         accountImpl = vm.envAddress("ACCOUNT_6551");
+
+        salt = 0;
         
         // EOAs/Signers
         multisig = vm.addr(1);
@@ -57,10 +60,13 @@ contract MinterTest is Test {
         membership = new MembershipNFT(multisig);
         fob = new FobNFT(multisig);
         minter = new Minter(
+            address(registry),
+            address(accountImpl),
             address(membership),
             address(fob),
             multisig,
-            admin
+            admin,
+            salt
         );
         testAddress = address(this);
 
@@ -282,7 +288,7 @@ contract MinterTest is Test {
         address membershipTBA = ERC6551AccountLib.computeAddress(
             address(registry), // registry, 
             address(accountImpl), // _implementation,
-            0, // _salt,
+            salt, // _salt,
             chainId, // chainId,
             address(membership), // tokenContract,
             tokenId // tokenId
