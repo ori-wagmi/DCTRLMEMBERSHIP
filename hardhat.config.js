@@ -1,5 +1,7 @@
 require("@nomicfoundation/hardhat-toolbox");
-require("@nomicfoundation/hardhat-foundry");
+if (process.env.TEST_MODE) {
+  require("@nomicfoundation/hardhat-foundry");
+}
 require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
