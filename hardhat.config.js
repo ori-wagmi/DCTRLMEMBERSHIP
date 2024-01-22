@@ -6,6 +6,10 @@ require("dotenv").config();
 module.exports = {
   solidity: "0.8.22",
   networks: {
+    sepolia: {
+      url: `https://ethereum-sepolia.publicnode.com`	,
+      accounts: [process.env.DEPLOYER_PRIV_KEY],
+    },
     arb: {
       url: `https://ethereum-sepolia.publicnode.com`,
       accounts: [process.env.DEPLOYER_PRIV_KEY],

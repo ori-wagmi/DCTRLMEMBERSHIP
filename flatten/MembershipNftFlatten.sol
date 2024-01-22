@@ -1,8 +1,10 @@
-// Original license: SPDX_License_Identifier: MIT
+// Sources flattened with hardhat v2.19.1 https://hardhat.org
+
+// SPDX-License-Identifier: MIT AND UNLICENSED
 
 // File @openzeppelin/contracts/access/IAccessControl.sol@v4.9.3
 
-
+// Original license: SPDX_License_Identifier: MIT
 // OpenZeppelin Contracts v4.4.1 (access/IAccessControl.sol)
 
 pragma solidity ^0.8.0;
@@ -94,7 +96,7 @@ interface IAccessControl {
 
 // File @openzeppelin/contracts/utils/Context.sol@v4.9.3
 
-
+// Original license: SPDX_License_Identifier: MIT
 // OpenZeppelin Contracts v4.4.1 (utils/Context.sol)
 
 pragma solidity ^0.8.0;
@@ -122,7 +124,7 @@ abstract contract Context {
 
 // File @openzeppelin/contracts/utils/introspection/IERC165.sol@v4.9.3
 
-
+// Original license: SPDX_License_Identifier: MIT
 // OpenZeppelin Contracts v4.4.1 (utils/introspection/IERC165.sol)
 
 pragma solidity ^0.8.0;
@@ -151,7 +153,7 @@ interface IERC165 {
 
 // File @openzeppelin/contracts/utils/introspection/ERC165.sol@v4.9.3
 
-
+// Original license: SPDX_License_Identifier: MIT
 // OpenZeppelin Contracts v4.4.1 (utils/introspection/ERC165.sol)
 
 pragma solidity ^0.8.0;
@@ -182,7 +184,7 @@ abstract contract ERC165 is IERC165 {
 
 // File @openzeppelin/contracts/utils/math/Math.sol@v4.9.3
 
-
+// Original license: SPDX_License_Identifier: MIT
 // OpenZeppelin Contracts (last updated v4.9.0) (utils/math/Math.sol)
 
 pragma solidity ^0.8.0;
@@ -525,7 +527,7 @@ library Math {
 
 // File @openzeppelin/contracts/utils/math/SignedMath.sol@v4.9.3
 
-
+// Original license: SPDX_License_Identifier: MIT
 // OpenZeppelin Contracts (last updated v4.8.0) (utils/math/SignedMath.sol)
 
 pragma solidity ^0.8.0;
@@ -572,7 +574,7 @@ library SignedMath {
 
 // File @openzeppelin/contracts/utils/Strings.sol@v4.9.3
 
-
+// Original license: SPDX_License_Identifier: MIT
 // OpenZeppelin Contracts (last updated v4.9.0) (utils/Strings.sol)
 
 pragma solidity ^0.8.0;
@@ -659,7 +661,7 @@ library Strings {
 
 // File @openzeppelin/contracts/access/AccessControl.sol@v4.9.3
 
-
+// Original license: SPDX_License_Identifier: MIT
 // OpenZeppelin Contracts (last updated v4.9.0) (access/AccessControl.sol)
 
 pragma solidity ^0.8.0;
@@ -909,7 +911,7 @@ abstract contract AccessControl is Context, IAccessControl, ERC165 {
 
 // File @openzeppelin/contracts/token/ERC721/IERC721.sol@v4.9.3
 
-
+// Original license: SPDX_License_Identifier: MIT
 // OpenZeppelin Contracts (last updated v4.9.0) (token/ERC721/IERC721.sol)
 
 pragma solidity ^0.8.0;
@@ -1043,7 +1045,7 @@ interface IERC721 is IERC165 {
 
 // File @openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol@v4.9.3
 
-
+// Original license: SPDX_License_Identifier: MIT
 // OpenZeppelin Contracts v4.4.1 (token/ERC721/extensions/IERC721Metadata.sol)
 
 pragma solidity ^0.8.0;
@@ -1072,7 +1074,7 @@ interface IERC721Metadata is IERC721 {
 
 // File @openzeppelin/contracts/token/ERC721/IERC721Receiver.sol@v4.9.3
 
-
+// Original license: SPDX_License_Identifier: MIT
 // OpenZeppelin Contracts (last updated v4.6.0) (token/ERC721/IERC721Receiver.sol)
 
 pragma solidity ^0.8.0;
@@ -1103,7 +1105,7 @@ interface IERC721Receiver {
 
 // File @openzeppelin/contracts/utils/Address.sol@v4.9.3
 
-
+// Original license: SPDX_License_Identifier: MIT
 // OpenZeppelin Contracts (last updated v4.9.0) (utils/Address.sol)
 
 pragma solidity ^0.8.1;
@@ -1351,7 +1353,7 @@ library Address {
 
 // File @openzeppelin/contracts/token/ERC721/ERC721.sol@v4.9.3
 
-
+// Original license: SPDX_License_Identifier: MIT
 // OpenZeppelin Contracts (last updated v4.9.0) (token/ERC721/ERC721.sol)
 
 pragma solidity ^0.8.0;
@@ -1817,76 +1819,80 @@ contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
 }
 
 
-// File contracts/FobNFT.sol
+// File contracts/MembershipNFT.sol
 
+// Original license: SPDX_License_Identifier: UNLICENSED
 pragma solidity 0.8.22;
+
+
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
 
-contract FobNFT is ERC721, AccessControl {
-    using Strings for uint256;
-
+contract MembershipNFT is ERC721, AccessControl {
+    uint256 public totalSupply = 0;
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
+    bytes32 public constant TRANSFER_ROLE = keccak256("TRANSFER_ROLE");
 
-    mapping(uint256 => uint256) public idToExpiration;
-    event Mint(address indexed owner, uint256 indexed fobNumber);
-    event Burn(uint256 indexed fobNumber);
+    struct nftMetadata {
+        uint256 creationDate;
+        string name;
+    }
+    mapping(uint256 => nftMetadata) public idToMetadata;
+    mapping(bytes32 => uint256) public nameToId;
+
+    address public multisig;
+
+    event Mint(address indexed name, uint256 indexed tokenId);
+
+    constructor(address _multisig) ERC721("Membership", "MEMBER") {
+        multisig = _multisig;
+        _grantRole(DEFAULT_ADMIN_ROLE, multisig);
+        _grantRole(MINTER_ROLE, multisig);
+        _grantRole(TRANSFER_ROLE, multisig);
+    }
     
-    address public admin;
+    function mint(address to, string calldata name) public onlyRole(MINTER_ROLE) {
+        totalSupply += 1; // tokenId starts at 1
 
-    constructor(address _admin) ERC721("Fob", "FOB") {
-        admin = _admin;
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(MINTER_ROLE, admin);
-        _grantRole(BURNER_ROLE, admin);
-    }
+        idToMetadata[totalSupply] = nftMetadata(block.timestamp, name);
+        nameToId[keccak256(abi.encode(name))] = totalSupply;
 
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        _requireMinted(tokenId);
-        return idToExpiration[tokenId].toString();
-    }
-
-    function issue(address to, uint256 fobNumber, uint256 months) public onlyRole(MINTER_ROLE) {
-        require(!_exists(fobNumber), "already exists");
-        _issue(to, fobNumber, months);
-    }
-
-    function reissue(address to, uint256 fobNumber, uint256 months) public onlyRole(MINTER_ROLE) {
-        _requireMinted(fobNumber);
-        burn(fobNumber);
-        _issue(to, fobNumber, months);
-    }
-
-    function extend(uint256 fobNumber, uint256 months) public onlyRole(MINTER_ROLE) {
-        _requireMinted(fobNumber);
-        idToExpiration[fobNumber] = idToExpiration[fobNumber] + (30 days * months);
-    }
-
-    function burn(uint256 fobNumber) public onlyRole(BURNER_ROLE) {
-        _requireMinted(fobNumber);
-        delete idToExpiration[fobNumber];
-        _burn(fobNumber);
-        emit Burn(fobNumber);
+        _safeMint(to, totalSupply);
+        emit Mint(to, totalSupply);
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControl, ERC721) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 
-    function _issue(address to, uint256 fobNumber, uint256 months) internal {
-        idToExpiration[fobNumber] = block.timestamp + (30 days * months);
-        _safeMint(to, fobNumber);
-        emit Mint(to, fobNumber);
+    function transferFrom(address from, address to, uint256 tokenId) public override onlyRole(TRANSFER_ROLE)  {
+        super.transferFrom(from, to, tokenId);
     }
 
-    // Transfers admin to new address
-    // Revokes DEFAULT_ADMIN_ROLE from old admin, grants it to new admin
-    // BURNER_ROLE and MINTER_ROLE should be manually managed
-    function setAdmin(address _admin) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(admin != _admin, "already admin");
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _revokeRole(DEFAULT_ADMIN_ROLE, admin);
-        admin = _admin;
+    function safeTransferFrom(address from, address to, uint256 tokenId) public override onlyRole(TRANSFER_ROLE) {
+        super.safeTransferFrom(from, to, tokenId, "");
+    }
+
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) public override onlyRole(TRANSFER_ROLE) {
+        super._safeTransfer(from, to, tokenId, data);
+    }
+
+    function _isApprovedOrOwner(address spender, uint256 tokenId) internal view override returns (bool) {
+        address owner = ERC721.ownerOf(tokenId);
+        return (hasRole(TRANSFER_ROLE, msg.sender) || // TRANSFER_ROLE always approved
+            spender == owner ||
+            isApprovedForAll(owner, spender) ||
+            getApproved(tokenId) == spender
+        );
+    }
+
+    // Transfers multisig to new address
+    // Revokes DEFAULT_ADMIN_ROLE from old multisig, grants it to new multisig
+    // MINTER_ROLE and TRANSFER_ROLE should be manually managed
+    function setMultisig(address _multisig) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(multisig != _multisig, "already multisig");
+        _grantRole(DEFAULT_ADMIN_ROLE, _multisig);
+        _revokeRole(DEFAULT_ADMIN_ROLE, multisig);
+        multisig = _multisig;
     }
 }

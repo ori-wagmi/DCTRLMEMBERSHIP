@@ -8,6 +8,15 @@ Userflow state diagrams: https://miro.com/app/board/uXjVN9-cSjo=/?share_link_id=
 
 ## Deployments
 FobNFT Optimism-Sepolia: https://optimism-sepolia.blockscout.com/address/0x93f6A58CeB439fbe8DDa84B5E02e334aaF6024c4
+FobNFT Sepolia: https://sepolia.etherscan.io/address/0x58375D0DF233c70533BA307e3c5C3B4f52D58B43#code
+
+Sepolia:
+- Registry: https://sepolia.etherscan.io/address/0x3ae4caee6fbc2a5eefbf27eccef7747b22fb9490#code
+- Multicall3: https://sepolia.etherscan.io/address/0x86e305ae97b79c15a8ebe9f331ce4db0ec3ee8a2#code
+- AccountGuardian: https://sepolia.etherscan.io/address/0x0e5e22506e7c5b9d8de73a99724ddfc99daefa51#code
+- AccountV3 (unverified): https://sepolia.etherscan.io/address/0xe14051b8e736caa02068bc2d9bad61f72f9c9d8d
+- MembershipNFT: https://sepolia.etherscan.io/address/0xbf744d6637012bfa479e7408709fb059581f0f6c#code
+- Minter: https://sepolia.etherscan.io/address/0x57839dabac294d87fa039d770da37dcc80e1baa0#code
 
 # How to use
 1. Create a copy of `.env.example` and rename it to `.env`
@@ -55,7 +64,7 @@ MembershipNFT.sol is an ERC721 that contains two fields:
 - creationDate
 - name
 
-The NFT is meant intended to be a 1:1 lifetime onchain representation with each physical human being. The NFT is "soulbound" in the sense that it cannot be traded by default.
+The NFT is intended to be a 1:1 lifetime onchain representation with each physical human being. The NFT is "soulbound" in the sense that it cannot be traded by default.
 
 The MembershipNFT is expected to be upgraded to a TokenBoundAccount using AccountV3. This way, the MembershipNFT can hold additional NFTs and scale to additional onchain activities.
 

@@ -5,8 +5,9 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 /// @dev Minter can mint or lookup ID for namehash.
 interface IMembershipNFT {
     function mint(address to, string calldata name) external;
-    function nameToId(bytes32 name) external returns (uint256);
+    function nameToId(bytes32 name) external view returns (uint256);
 }
+
 /// @dev Minter can issue, reissue, or extend.
 interface IFobNFT is IERC721 {
     function reissue(address to, uint256 fobNumber, uint256 months) external;
@@ -14,12 +15,33 @@ interface IFobNFT is IERC721 {
     function extend(uint256 fobNumber, uint256 months) external;
 }
 
+interface IRegistry {
+    function createAccount(
+        address implementation,
+        bytes32 salt,
+        uint256 chainId,
+        address tokenContract,
+        uint256 tokenId
+    ) external returns (address account);
+
+    function account(
+        address implementation,
+        bytes32 salt,
+        uint256 chainId,
+        address tokenContract,
+        uint256 tokenId
+    ) external view returns (address account);
+
 /// @title Minter
 /// @notice Minter contract interface for Membership & Fob NFTs
 contract Minter {
     IMembershipNFT public membershipNFT;
     IFobNFT public fobNFT;
+    IRegistry public registry;
     
+    address public accountV3;
+    bytes32 public salt;
+
     // Monthly fee for Fob access.
     uint256 public fobMonthly = .1 ether;
     
@@ -27,16 +49,29 @@ contract Minter {
     address public paymentReceiver; 
     address public admin;
 
-    /// @dev Initialize with interface and Admin addresses.
+    /// @dev Initialize with 6551 implementations, contracts and Admin addresses.
+    /// @param _registry (address)
+    /// @param _accountV3 (address)
     /// @param _membershipNFT (address)
     /// @param _fobNFT (address)
     /// @param _paymentReceiver (address)
     /// @param _admin (address)
-    constructor (address _membershipNFT, address _fobNFT, address _paymentReceiver, address _admin) {
+    constructor (
+        address _registry,
+        address _accountV3,
+        address _membershipNFT,
+        address _fobNFT,
+        address _paymentReceiver,
+        address _admin,
+        bytes32 _salt
+    ) {
         membershipNFT = IMembershipNFT(_membershipNFT);
         fobNFT = IFobNFT(_fobNFT);
+        registry = IRegistry(_registry);
+        accountV3 = _accountV3;
         paymentReceiver = _paymentReceiver;
         admin = _admin;
+        salt = _salt;
     }
 
     /// @notice Issue a Membership NFT with name to an address.
@@ -44,8 +79,18 @@ contract Minter {
     /// @param to (address)
     /// @param name (string)
     function issueMembership(address to, string calldata name) external {
-        require(membershipNFT.nameToId(keccak256(abi.encode(name))) == 0, "name exists");
+        uint256 tokenId = membershipNFT.nameToId(keccak256(abi.encode(name)));
+        require(tokenId == 0, "name exists");
         membershipNFT.mint(to, name);
+
+        return
+            registry.createAccount(
+                accountV3,
+                bytes32(salt),
+                block.chainid,
+                address(membershipNFT),
+                tokenId
+            );
     }
 
     /// @dev Must send monthly fee exact. Dues to Multisig.
