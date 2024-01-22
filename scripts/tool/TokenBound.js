@@ -43,8 +43,8 @@ async function fobMint() {
     let receiver = await Utils.askQuestion("Who is receiving the fob?: ");
     let isCallerPay = await Utils.getYesNo("Is caller paying? (Y/N): ");
     let fobNumber = Number(await Utils.askQuestion("What is the fob number?: "));
-
-    await Blockchain.issueFobAsTokenBound(account, caller, receiver, fobNumber, isCallerPay);
+    let months = Number(await Utils.askQuestion("How many months?: "));
+    await Blockchain.issueFobAsTokenBound(account, caller, receiver, fobNumber, months, isCallerPay);
 }
 
 async function fobExtend() {
@@ -53,8 +53,9 @@ async function fobExtend() {
     let caller = await Utils.askQuestion("Enter caller address: ");
     let isCallerPay = await Utils.getYesNo("Is caller paying? (Y/N): ");
     let fobNumber = Number(await Utils.askQuestion("What is the fob number?: "));
+    let months = Number(await Utils.askQuestion("How many months?: "));
 
-    await Blockchain.extendFobAsTokenBound(account, caller, fobNumber, isCallerPay);
+    await Blockchain.extendFobAsTokenBound(account, caller, fobNumber, months, isCallerPay);
 }
 
 async function fobTransfer() {

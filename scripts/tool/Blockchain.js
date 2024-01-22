@@ -13,7 +13,6 @@ module.exports = {
 
 // Deploys 6551Registry, AccountV3, Minter, Membership, and Fob contracts
 // Grants `minterContract` MINTER_ROLE for Membership, and MINTER_ROLE for Fob
-// Grants owner[0] (multisig) TRANSFER_ROLE for Membership, and BURNER_ROLE for Fob
 module.exports.setupContracts = async function setupContracts() {
     let [owner] = await ethers.getSigners();
     const Registry = await hre.ethers.getContractFactory("ERC6551Registry");
@@ -46,14 +45,12 @@ module.exports.setupContracts = async function setupContracts() {
     await fob.deployed();
 
     const Minter = await hre.ethers.getContractFactory("Minter");
-    const minter = await Minter.deploy(membership.address, fob.address, owner.address);
+    const minter = await Minter.deploy(membership.address, fob.address, owner.address, owner.address);
     await minter.deployed();
 
     await membership.grantRole(await membership.MINTER_ROLE(), minter.address);
-    await membership.grantRole(await membership.TRANSFER_ROLE(), owner.address);
     await fob.grantRole(await fob.MINTER_ROLE(), minter.address);
     await fob.grantRole(await fob.BURNER_ROLE(), minter.address);
-    await fob.grantRole(await fob.BURNER_ROLE(), owner.address);
 
     return [minter, registry, implementation, membership, fob];
 }
