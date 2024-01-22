@@ -15,6 +15,7 @@ interface IFobNFT is IERC721 {
     function extend(uint256 fobNumber, uint256 months) external;
 }
 
+/// @dev Minter can create and query ERC6551 TokenBound accounts.
 interface IRegistry {
     function createAccount(
         address implementation,
@@ -31,6 +32,7 @@ interface IRegistry {
         address tokenContract,
         uint256 tokenId
     ) external view returns (address account);
+}
 
 /// @title Minter
 /// @notice Minter contract interface for Membership & Fob NFTs
@@ -56,6 +58,7 @@ contract Minter {
     /// @param _fobNFT (address)
     /// @param _paymentReceiver (address)
     /// @param _admin (address)
+    /// @param _salt (bytes32) Salt for TokenBound account creation.
     constructor (
         address _registry,
         address _accountV3,
@@ -78,7 +81,7 @@ contract Minter {
     /// @dev No namehash collision allowed.
     /// @param to (address)
     /// @param name (string)
-    function issueMembership(address to, string calldata name) external {
+    function issueMembership(address to, string calldata name) external returns (address) {
         uint256 tokenId = membershipNFT.nameToId(keccak256(abi.encode(name)));
         require(tokenId == 0, "name exists");
         membershipNFT.mint(to, name);
@@ -91,6 +94,36 @@ contract Minter {
                 address(membershipNFT),
                 tokenId
             );
+    }
+
+    /// @notice Get the 6551 TokenBound address from token ID.
+    /// @dev Must be a valid token ID.
+    /// @param tokenId (uint256)
+    function getMembershipAddressById(uint256 tokenId) view external returns (address) {
+        require(tokenId != 0, "token doesn't exist");
+        return registry.account(
+            accountV3,
+            bytes32(salt),
+            block.chainid,
+            address(membershipNFT),
+            tokenId
+        );
+    }
+
+    /// @notice Get the 6551 TokenBound address from name.
+    /// @dev Must be a valid name.
+    /// @param name (string)
+    function getMembershipAddressByName(string calldata name) view external returns (address) {
+        uint256 tokenId = membershipNFT.nameToId(keccak256(abi.encode(name)));
+        require(tokenId != 0, "name doesn't exists");
+
+        return registry.account(
+            accountV3,
+            bytes32(salt),
+            block.chainid,
+            address(membershipNFT),
+            tokenId
+        );
     }
 
     /// @dev Must send monthly fee exact. Dues to Multisig.
