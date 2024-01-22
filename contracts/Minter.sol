@@ -4,53 +4,122 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 interface IMembershipNFT {
     function mint(address to, string calldata name) external;
-    function nameToId(bytes32 name) external returns (uint256);
+    function nameToId(bytes32 name) external view returns (uint256);
 }
+
 interface IFobNFT is IERC721 {
-    function reissue(address to, uint256 fobNumber) external;
-    function issue(address to, uint256 fobNumber) external;
-    function extend(uint256 fobNumber) external;
+    function reissue(address to, uint256 fobNumber, uint256 months) external;
+    function issue(address to, uint256 fobNumber, uint256 months) external;
+    function extend(uint256 fobNumber, uint256 months) external;
+} 
+
+interface IRegistry {
+    function createAccount(
+        address implementation,
+        bytes32 salt,
+        uint256 chainId,
+        address tokenContract,
+        uint256 tokenId
+    ) external returns (address account);
+
+    function account(
+        address implementation,
+        bytes32 salt,
+        uint256 chainId,
+        address tokenContract,
+        uint256 tokenId
+    ) external view returns (address account);
 }
 
 contract Minter {
     IMembershipNFT public membershipNFT;
     IFobNFT public fobNFT;
-    uint256 public fobMonthly = 1 ether;
-    address public multisig;
+    IRegistry public registry;
+    address public accountV3;
+    bytes32 public salt;
 
-    constructor (address _membershipNFT, address _fobNFT, address _multisig) {
+    uint256 public fobMonthly = .1 ether;
+    address public paymentReceiver;
+    address public admin;
+
+    constructor(
+        address _registry,
+        address _accountV3,
+        address _membershipNFT,
+        address _fobNFT,
+        address _paymentReceiver,
+        address _admin,
+        bytes32 _salt
+    ) {
         membershipNFT = IMembershipNFT(_membershipNFT);
         fobNFT = IFobNFT(_fobNFT);
-        multisig = _multisig;
+        registry = IRegistry(_registry);
+        accountV3 = _accountV3;
+        paymentReceiver = _paymentReceiver;
+        admin = _admin;
+        salt = _salt;
     }
 
-    function issueMembership(address to, string calldata name) external {
-        require(to != multisig, "is multisig");
-        require(membershipNFT.nameToId(keccak256(abi.encode(name))) == 0, "name exists");
+    function issueMembership(
+        address to,
+        string calldata name
+    ) external returns (address) {
+        uint256 tokenId = membershipNFT.nameToId(keccak256(abi.encode(name)));
+        require(tokenId == 0, "name exists");
         membershipNFT.mint(to, name);
+
+        return
+            registry.createAccount(
+                accountV3,
+                bytes32(salt),
+                block.chainid,
+                address(membershipNFT),
+                tokenId
+            );
     }
 
-    function issueMembershipCustodian(string calldata name) external {
-        require(membershipNFT.nameToId(keccak256(abi.encode(name))) == 0, "name exists");
-        membershipNFT.mint(multisig, name);
+    function issueFob(address to, uint256 fobNumber, uint256 months) external payable {
+        require(msg.value == (fobMonthly * months), "wrong amount");
+        payable(paymentReceiver).transfer(msg.value);
+        fobNFT.issue(to, fobNumber, months);
     }
 
-    function issueFob(address to, uint256 fobNumber) external payable {
-        require(msg.value == fobMonthly, "wrong amount");
-        payable(multisig).transfer(msg.value);
-        fobNFT.issue(to, fobNumber);
+    function reissueFob(address to, uint256 fobNumber, uint256 months) external payable {
+        require(msg.sender == admin || msg.sender == fobNFT.ownerOf(fobNumber), "not owner");
+        require(msg.value == (fobMonthly * months), "wrong amount");
+        payable(paymentReceiver).transfer(msg.value);
+        fobNFT.reissue(to, fobNumber, months);
     }
 
-    function reissueFob(address to, uint256 fobNumber) external payable {
-        require(msg.sender == multisig || msg.sender == fobNFT.ownerOf(fobNumber), "not owner");
-        require(msg.value == fobMonthly, "wrong amount");
-        payable(multisig).transfer(msg.value);
-        fobNFT.reissue(to, fobNumber);
+    function extendFob(uint256 fobNumber, uint256 months) external payable {
+        require(msg.value == (fobMonthly * months), "wrong amount");
+        payable(paymentReceiver).transfer(msg.value);
+        fobNFT.extend(fobNumber, months);
     }
 
-    function extendFob(uint256 fobNumber) external payable {
-        require(msg.value == fobMonthly, "wrong amount");
-        payable(multisig).transfer(msg.value);
-        fobNFT.extend(fobNumber);
+    /// Admin functions ///
+    function setAdmin(address _admin) external {
+        require(msg.sender == admin, "not admin");
+        admin = _admin;
+    }
+
+    function setPaymentReceiver(address _paymentReceiver) external {
+        require(msg.sender == admin, "not admin");
+        paymentReceiver = _paymentReceiver;
+    }
+
+    function setFobMonthly(uint256 _fobMonthly) external {
+        require(msg.sender == admin, "not admin");
+        fobMonthly = _fobMonthly;
+    }
+
+    function setMembershipNFT(address _membershipNFT) external {
+        require(msg.sender == admin, "not admin");
+        membershipNFT = IMembershipNFT(_membershipNFT);
+    }
+
+    function setFobNFT(address _fobNFT) external {
+        require(msg.sender == admin, "not admin");
+        fobNFT = IFobNFT(_fobNFT);
     }
 }
