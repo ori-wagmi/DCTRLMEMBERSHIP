@@ -31,6 +31,7 @@ interface IRegistry {
         address tokenContract,
         uint256 tokenId
     ) external view returns (address account);
+}
 
 /// @title Minter
 /// @notice Minter contract interface for Membership & Fob NFTs
