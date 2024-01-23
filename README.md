@@ -7,16 +7,14 @@ https://app.dework.xyz/dctrl/nft-membership-40303/view/board-loywtdc1?taskId=225
 Userflow state diagrams: https://miro.com/app/board/uXjVN9-cSjo=/?share_link_id=748410878407
 
 ## Deployments
-FobNFT Optimism-Sepolia: https://optimism-sepolia.blockscout.com/address/0x93f6A58CeB439fbe8DDa84B5E02e334aaF6024c4
-FobNFT Sepolia: https://sepolia.etherscan.io/address/0x58375D0DF233c70533BA307e3c5C3B4f52D58B43#code
-
 Sepolia:
 - Registry: https://sepolia.etherscan.io/address/0x3ae4caee6fbc2a5eefbf27eccef7747b22fb9490#code
 - Multicall3: https://sepolia.etherscan.io/address/0x86e305ae97b79c15a8ebe9f331ce4db0ec3ee8a2#code
 - AccountGuardian: https://sepolia.etherscan.io/address/0x0e5e22506e7c5b9d8de73a99724ddfc99daefa51#code
 - AccountV3 (unverified): https://sepolia.etherscan.io/address/0xe14051b8e736caa02068bc2d9bad61f72f9c9d8d
-- MembershipNFT: https://sepolia.etherscan.io/address/0xbf744d6637012bfa479e7408709fb059581f0f6c#code
-- Minter: https://sepolia.etherscan.io/address/0x57839dabac294d87fa039d770da37dcc80e1baa0#code
+- membership: https://sepolia.etherscan.io/address/0x807ec011bd4c5b122178d73fbd0b49d46fb4a0b9#code
+FobNFT minted: 0x880505222ccAd5E03221005839F12d32B7F4B2EF
+Minter minted: 0xB2895d2a0205F05c70C0342259492C97423FaCC4
 
 # How to use
 1. Create a copy of `.env.example` and rename it to `.env`

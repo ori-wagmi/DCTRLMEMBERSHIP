@@ -43,34 +43,34 @@ contract FobNFT is ERC721, AccessControl {
         return idToExpiration[tokenId].toString();
     }
 
-    /// @notice Mint a new token ID for `months`.
+    /// @notice Mint a new token ID for `numDays`.
     /// @dev Must be non-existant ID. Minter role only.
     /// @param to (adddress)
     /// @param fobNumber (uint256)
-    /// @param months (uint256)
-    function issue(address to, uint256 fobNumber, uint256 months) public onlyRole(MINTER_ROLE) {
+    /// @param numDays (uint256)
+    function issue(address to, uint256 fobNumber, uint256 numDays) public onlyRole(MINTER_ROLE) {
         require(!_exists(fobNumber), "already exists");
-        _issue(to, fobNumber, months);
+        _issue(to, fobNumber, numDays);
     }
 
-    /// @notice Burn and re-mint a given token ID for `months`.
+    /// @notice Burn and re-mint a given token ID for `numDays`.
     /// @dev Must be an existing ID. Minter role only.
     /// @param to (address)
     /// @param fobNumber (uint256)
-    /// @param months (uint256)
-    function reissue(address to, uint256 fobNumber, uint256 months) public onlyRole(MINTER_ROLE) {
+    /// @param numDays (uint256)
+    function reissue(address to, uint256 fobNumber, uint256 numDays) public onlyRole(MINTER_ROLE) {
         _requireMinted(fobNumber);
         burn(fobNumber);
-        _issue(to, fobNumber, months);
+        _issue(to, fobNumber, numDays);
     }
 
-    /// @notice Extend the expiry time for a given token ID in increments of 30 days.
-    /// @dev Must be an existing ID, adds 30 days * months to expiry. Minter role only.
+    /// @notice Extend the expiry time for a given token ID in day incremenets.
+    /// @dev Must be an existing ID, adds numDays to expiry. Minter role only.
     /// @param fobNumber (uint256)
-    /// @param months (uint256)
-    function extend(uint256 fobNumber, uint256 months) public onlyRole(MINTER_ROLE) {
+    /// @param numDays (uint256)
+    function extend(uint256 fobNumber, uint256 numDays) public onlyRole(MINTER_ROLE) {
         _requireMinted(fobNumber);
-        idToExpiration[fobNumber] = idToExpiration[fobNumber] + (30 days * months);
+        idToExpiration[fobNumber] = idToExpiration[fobNumber] + (1 days * numDays);
     }
 
     /// @notice Destroy a given token ID.
@@ -89,12 +89,12 @@ contract FobNFT is ERC721, AccessControl {
     }
 
     /// @notice Issue a new token with an expiration.
-    /// @dev Internal mint function, add 30 days * months to current.
+    /// @dev Internal mint function, add numDays to .
     /// @param to (address)
     /// @param fobNumber (uint256)
-    /// @param months (uint256)
-    function _issue(address to, uint256 fobNumber, uint256 months) internal {
-        idToExpiration[fobNumber] = block.timestamp + (30 days * months);
+    /// @param numDays (uint256)
+    function _issue(address to, uint256 fobNumber, uint256 numDays) internal {
+        idToExpiration[fobNumber] = block.timestamp + (1 days * numDays);
         _safeMint(to, fobNumber);
         emit Mint(to, fobNumber);
     }

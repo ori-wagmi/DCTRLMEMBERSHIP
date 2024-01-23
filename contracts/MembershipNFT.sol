@@ -21,6 +21,7 @@ contract MembershipNFT is ERC721, AccessControl {
     struct nftMetadata {
         uint256 creationDate;
         string name;
+        //TODO: need to add role
     }
     // Maps a token ID to a metadata struct.
     mapping(uint256 => nftMetadata) public idToMetadata;

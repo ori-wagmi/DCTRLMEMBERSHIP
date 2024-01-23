@@ -10,9 +10,11 @@ interface IMembershipNFT {
 
 /// @dev Minter can issue, reissue, or extend.
 interface IFobNFT is IERC721 {
-    function reissue(address to, uint256 fobNumber, uint256 months) external;
-    function issue(address to, uint256 fobNumber, uint256 months) external;
-    function extend(uint256 fobNumber, uint256 months) external;
+    function reissue(address to, uint256 fobNumber, uint256 numDays) external;
+    function issue(address to, uint256 fobNumber, uint256 numDays) external;
+    function extend(uint256 fobNumber, uint256 numDays) external;
+    function burn(uint256 fobNumber) external;
+    function idToExpiration(uint256 tokenId) external view returns (uint256);
 }
 
 /// @dev Minter can create and query ERC6551 TokenBound accounts.
@@ -44,8 +46,8 @@ contract Minter {
     address public accountV3;
     bytes32 public salt;
 
-    // Monthly fee for Fob access.
-    uint256 public fobMonthly = .1 ether;
+    // daily fee for Fob access.
+    uint256 public fobDaily = .01 ether;
     
     // Multisig
     address public paymentReceiver; 
@@ -126,36 +128,49 @@ contract Minter {
         );
     }
 
-    /// @dev Must send monthly fee exact. Dues to Multisig.
+    /// @dev Must send daily fee exact. Dues to Multisig.
     /// @param to (address)
     /// @param fobNumber (uint256)
-    /// @param months (uint256)
-    function issueFob(address to, uint256 fobNumber, uint256 months) external payable {
-        require(msg.value == (fobMonthly * months), "wrong amount");
+    /// @param numDays (uint256)
+    function issueFob(address to, uint256 fobNumber, uint256 numDays) external payable {
+        require(msg.value == (fobDaily * numDays), "wrong amount");
         payable(paymentReceiver).transfer(msg.value);
-        fobNFT.issue(to, fobNumber, months);
+        fobNFT.issue(to, fobNumber, numDays);
     }
 
-    /// @notice Reissue a given Fob by token ID to an address.
-    /// @dev Must be called by owner or admin, monthly fee exact. Dues to Multisig.
+    /// @notice Helper function to burn and mint token ID in one transaction.
+    /// @dev Must be called by owner or admin, fee exact. Dues to Multisig.
     /// @param to (address)
     /// @param fobNumber (uint256)
-    /// @param months (uint256)
-    function reissueFob(address to, uint256 fobNumber, uint256 months) external payable {
+    /// @param numDays (uint256)
+    function burnAndMintFob(address to, uint256 fobNumber, uint256 numDays) external payable {
         require(msg.sender == admin || msg.sender == fobNFT.ownerOf(fobNumber), "not owner");
-        require(msg.value == (fobMonthly * months), "wrong amount");
+        require(msg.value == (fobDaily * numDays), "wrong amount");
         payable(paymentReceiver).transfer(msg.value);
-        fobNFT.reissue(to, fobNumber, months);
+        fobNFT.reissue(to, fobNumber, numDays);
     }
+
+    /// @notice Lost fob scenario. 
+    /// @notice Burns old token ID and mints new token ID with same expiration.
+    /// @dev Must be called by owner or admin, fee exact. Dues to Multisig.
+    /// @param old_fobNumber (uint256)
+    /// @param new_fobNumber (uint256)
+    function transferExpirationToNewFobNumber(address to, uint256 old_fobNumber, uint256 new_fobNumber) external payable {
+        require(msg.sender == admin || msg.sender == fobNFT.ownerOf(old_fobNumber), "not owner");
+        uint256 remainingDays = fobNFT.idToExpiration(old_fobNumber) - block.timestamp;
+        fobNFT.burn(old_fobNumber);
+        fobNFT.issue(to, new_fobNumber, remainingDays);
+    }
+
 
     /// @notice Extend the expiry time for a given token ID.
-    /// @dev Monthly fee exact for extension period. Dues to Multisig.
+    /// @dev fee exact for extension period. Dues to Multisig.
     /// @param fobNumber (uint256)
-    /// @param months (uint256)
-    function extendFob(uint256 fobNumber, uint256 months) external payable {
-        require(msg.value == (fobMonthly * months), "wrong amount");
+    /// @param numDays (uint256)
+    function extendFob(uint256 fobNumber, uint256 numDays) external payable {
+        require(msg.value == (fobDaily * numDays), "wrong amount");
         payable(paymentReceiver).transfer(msg.value);
-        fobNFT.extend(fobNumber, months);
+        fobNFT.extend(fobNumber, numDays);
     }
 
     /** Admin functions */
@@ -175,12 +190,12 @@ contract Minter {
         paymentReceiver = _paymentReceiver;
     }
 
-    /// @notice Set new monthly due rate.
+    /// @notice Set new daily due rate.
     /// @dev Sender must be admin.
-    /// @param _fobMonthly (uint256)
-    function setFobMonthly(uint256 _fobMonthly) external {
+    /// @param _fobDaily (uint256)
+    function setFobDaily(uint256 _fobDaily) external {
         require(msg.sender == admin, "not admin");
-        fobMonthly = _fobMonthly;
+        fobDaily = _fobDaily;
     }
 
     /// @notice Set new membership NFT contract.
@@ -197,5 +212,12 @@ contract Minter {
     function setFobNFT(address _fobNFT) external {
         require(msg.sender == admin, "not admin");
         fobNFT = IFobNFT(_fobNFT);
+    }
+
+    function set6551Details(address _registry, address _accountV3, bytes32 _salt) external {
+        require(msg.sender == admin, "not admin");
+        registry = IRegistry(_registry);
+        accountV3 = _accountV3;
+        salt = _salt;
     }
 }

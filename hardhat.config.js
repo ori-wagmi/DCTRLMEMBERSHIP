@@ -1,9 +1,8 @@
 require("@nomicfoundation/hardhat-toolbox");
-if (process.env.TEST_MODE) {
+require("dotenv").config();
+if (process.env.TEST_MODE === "true") {
   require("@nomicfoundation/hardhat-foundry");
 }
-require("dotenv").config();
-
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: "0.8.22",

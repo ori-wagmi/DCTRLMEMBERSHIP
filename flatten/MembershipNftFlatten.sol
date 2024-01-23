@@ -1823,13 +1823,17 @@ contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
 
 // Original license: SPDX_License_Identifier: UNLICENSED
 pragma solidity 0.8.22;
-
-
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
 
+/// @title MembershipNFT
+/// @notice Membership NFT with access control
 contract MembershipNFT is ERC721, AccessControl {
+
+    // Initialize supply at zero.
     uint256 public totalSupply = 0;
+
+    // Special roles accessing mint and transfer functions.
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant TRANSFER_ROLE = keccak256("TRANSFER_ROLE");
 
@@ -1837,13 +1841,19 @@ contract MembershipNFT is ERC721, AccessControl {
         uint256 creationDate;
         string name;
     }
+    // Maps a token ID to a metadata struct.
     mapping(uint256 => nftMetadata) public idToMetadata;
+
+    // Maps the keccak hash of name metadata to a token ID.
     mapping(bytes32 => uint256) public nameToId;
 
+    // Multisig account.
     address public multisig;
 
     event Mint(address indexed name, uint256 indexed tokenId);
 
+    /// @dev Sets the multisig account with Admin role upon initialization.
+    /// @param _multisig (address)
     constructor(address _multisig) ERC721("Membership", "MEMBER") {
         multisig = _multisig;
         _grantRole(DEFAULT_ADMIN_ROLE, multisig);
@@ -1851,6 +1861,11 @@ contract MembershipNFT is ERC721, AccessControl {
         _grantRole(TRANSFER_ROLE, multisig);
     }
     
+    /// @notice Mint a new token to an address, with a name.
+    /// @dev Store timestamp and name in metadata,
+    /// @dev Store namehash at tokenId, indexed from 1, mint increment supply.
+    /// @param to (address)
+    /// @param name (string)
     function mint(address to, string calldata name) public onlyRole(MINTER_ROLE) {
         totalSupply += 1; // tokenId starts at 1
 
@@ -1861,34 +1876,47 @@ contract MembershipNFT is ERC721, AccessControl {
         emit Mint(to, totalSupply);
     }
 
+    /// @inheritdoc ERC721
     function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControl, ERC721) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 
+    /// @inheritdoc ERC721
+    /// @dev Transfer role only.
     function transferFrom(address from, address to, uint256 tokenId) public override onlyRole(TRANSFER_ROLE)  {
         super.transferFrom(from, to, tokenId);
     }
-
+    
+    /// @inheritdoc ERC721
+    /// @dev Transfer role only.
     function safeTransferFrom(address from, address to, uint256 tokenId) public override onlyRole(TRANSFER_ROLE) {
         super.safeTransferFrom(from, to, tokenId, "");
     }
 
+    /// @inheritdoc ERC721
+    /// @notice Transfer with arbitrary bytes.
+    /// @dev Transfer role only.
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) public override onlyRole(TRANSFER_ROLE) {
         super._safeTransfer(from, to, tokenId, data);
     }
 
+    /// @notice Check an addresss for ownership or operator approval.
+    /// @dev `multisig` address is always approved
+    /// @param spender (address), tokenId (uint256)
+    /// @return flag (bool), returns true if msg.sender is Admin (multisig), spender is equivalent to owner, owner carries contract approval or spender carries token approval.
     function _isApprovedOrOwner(address spender, uint256 tokenId) internal view override returns (bool) {
         address owner = ERC721.ownerOf(tokenId);
-        return (hasRole(TRANSFER_ROLE, msg.sender) || // TRANSFER_ROLE always approved
+        // TRANSFER_ROLE always approved
+        return (hasRole(TRANSFER_ROLE, msg.sender) || 
             spender == owner ||
             isApprovedForAll(owner, spender) ||
             getApproved(tokenId) == spender
         );
     }
 
-    // Transfers multisig to new address
-    // Revokes DEFAULT_ADMIN_ROLE from old multisig, grants it to new multisig
-    // MINTER_ROLE and TRANSFER_ROLE should be manually managed
+    /// @notice Transfers multisig to new address
+    /// @dev Revokes DEFAULT_ADMIN_ROLE from old multisig, grants it to new multisig
+    /// @dev MINTER_ROLE and TRANSFER_ROLE are set in constructor, but should be manually managed.
     function setMultisig(address _multisig) public onlyRole(DEFAULT_ADMIN_ROLE) {
         require(multisig != _multisig, "already multisig");
         _grantRole(DEFAULT_ADMIN_ROLE, _multisig);
