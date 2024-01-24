@@ -84,4 +84,5 @@ Test suite is in Foundry, install docs here (https://book.getfoundry.sh/getting-
  Environment variables below the **Required for running tests** heading must be valid in your .env to run the tests. Tests require forking from latest block on the target chain.
 
 To run tests with 1st level of verbosity:
+`forge install foundry-rs/forge-std`
 `forge test -v`

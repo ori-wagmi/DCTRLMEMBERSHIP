@@ -165,7 +165,7 @@ contract MinterTest is Test {
 
         // Frontend handles Fob ID selection.
         address membershipTBA = calculateTBA(1);
-        uint fobDuesAnnual = minter.fobMonthly() * 12; 
+        uint fobDuesMonthly = minter.fobDaily() * 30; 
         console.log("TBA for ID 1:", membershipTBA);
         console.log("");
 
@@ -174,11 +174,11 @@ contract MinterTest is Test {
         vm.expectEmit();
         emit FobNFT.Mint(membershipTBA, tokenId);
 
-        minter.issueFob{value: fobDuesAnnual}(membershipTBA, tokenId, 12);
+        minter.issueFob{value: fobDuesMonthly}(membershipTBA, tokenId, 30);
 
         // Check timestamp
         uint expiry = fob.idToExpiration(1);
-        assertNotEq(expiry, 0);
+        assertEq(expiry, block.timestamp + 30 days);
         console.log("Fob 1's Expiry: ", expiry);
         console.log("");
 
@@ -190,11 +190,11 @@ contract MinterTest is Test {
         testFobIssue();
 
         address membershipTBA = calculateTBA(1);
-        uint fobDuesHalfYear = minter.fobMonthly() * 6;
+        uint fobsDue60Days = minter.fobDaily() * 60;
         uint expiry = fob.idToExpiration(1);
 
         // NB: Assuming 30 day months...
-        assertEq(expiry, (block.timestamp + 30 days * 12));
+        assertEq(expiry, (block.timestamp + 30 days));
         console.log("TBA for ID 1:", membershipTBA);
         console.log("");
 
@@ -209,10 +209,10 @@ contract MinterTest is Test {
         emit FobNFT.Mint(membershipTBA, 1);
 
         // Reissue for 6 months
-        minter.reissueFob{value: fobDuesHalfYear}(membershipTBA, 1, 6);
+        minter.burnAndMintFob{value: fobsDue60Days}(membershipTBA, 1, 60);
 
         // Check expiration equals reissue time + 6 months
-        assertEq(fob.idToExpiration(1), block.timestamp + (30 days * 6));
+        assertEq(fob.idToExpiration(1), block.timestamp + (60 days));
 
         vm.expectEmit();
         emit FobNFT.Burn(1);
@@ -220,28 +220,28 @@ contract MinterTest is Test {
         emit FobNFT.Mint(membershipTBA, 1);
 
         // Scenario 2: Accidental Reissue to same TBA
-        minter.reissueFob{value: fobDuesHalfYear/6}(membershipTBA, 1, 1);
+        minter.burnAndMintFob{value: minter.fobDaily()}(membershipTBA, 1, 1);
         
         // Check expiration increased by 1 month
         // NB: Replaces current expiry.
-        assertEq(fob.idToExpiration(1), block.timestamp + 30 days);
+        assertEq(fob.idToExpiration(1), block.timestamp + 1 days);
         vm.stopPrank();
     }
 
     function testFobExtend() public {
          // Setup issuance
         testFobIssue();
-        uint fobFee = minter.fobMonthly();
+        uint fobFee = minter.fobDaily();
         uint expiry = fob.idToExpiration(1);
         // Elapse time ~one block til expiry
         vm.warp(expiry - 12 seconds);
 
         vm.startPrank(admin);
-        // Extend Fob 1 for one month
+        // Extend Fob 1 for 30 days
         minter.extendFob{value: fobFee}(1, 1);
 
-        //Ensure expiry increased by 30 days
-        assertEq(expiry + 30 days, fob.idToExpiration(1));
+        //Ensure expiry increased 1 days
+        assertEq(expiry + 1 days, fob.idToExpiration(1));
 
         vm.stopPrank();
     }
