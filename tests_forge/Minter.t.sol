@@ -93,9 +93,15 @@ contract MinterTest is Test {
     function testMembershipIssue() public {
         vm.startPrank(testAddress);
 
+        // Issue Membership NFT
         minter.issueMembership(alanah, memberName);
         assertEq(1, membership.balanceOf(alanah));
 
+        // Check membership metadata is correct
+        (uint256 creationDate, string memory name) = membership.idToMetadata(1);
+        assertEq(name, memberName);
+        assertEq(creationDate, block.timestamp);
+        
         vm.stopPrank();
     }
 
@@ -118,6 +124,7 @@ contract MinterTest is Test {
         console.log("ID %d Created: %d", targetId, createDate);
         console.log("");
     }
+
     function testMembershipTransfer() public {
         testMembershipIssue();
 
