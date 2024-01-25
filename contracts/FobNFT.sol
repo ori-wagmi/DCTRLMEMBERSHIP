@@ -3,6 +3,7 @@ pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/utils/Base64.sol";
 
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
@@ -25,6 +26,11 @@ contract FobNFT is ERC721, AccessControl {
     
     address public admin;
 
+    string public imageBaseUri = "https://google.com/";
+    string public externalUri = "https://dctrl.wtf";
+    string public animationUri = "";
+    string public description = "This is a description";
+
     /// @dev Grants Default Admin, Minter, and Burner role to address upon initialization.
     /// @param _admin (address)
     constructor(address _admin) ERC721("Fob", "FOB") {
@@ -34,13 +40,37 @@ contract FobNFT is ERC721, AccessControl {
         _grantRole(BURNER_ROLE, admin);
     }
 
+    /// @inheritdoc ERC721
     /// @notice Given a token ID, returns the expiry timestamp.
     /// @dev Expiry as string, not protocol prefix as required for URI.
     /// @param tokenId (uint256)
     /// @return Timestamp as string.
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireMinted(tokenId);
-        return idToExpiration[tokenId].toString();
+        return getTokenURI(tokenId);
+    }
+
+    function _baseURI() internal view override returns (string memory) {
+        return imageBaseUri;
+    }
+    
+    function getTokenURI(uint256 tokenId) internal view returns (string memory) {
+        bytes memory dataURI = abi.encodePacked(
+            '{',
+                '"description":"', description, '",',
+                '"image":"', imageBaseUri, tokenId.toString(), '",',
+                '"external_url":"', externalUri, '",',
+                '"animation_url":"', animationUri, '",', 
+                '"expiration":', idToExpiration[tokenId].toString(),
+            '}'
+        );
+
+        return string(
+            abi.encodePacked(
+                "data:application/json;base64,",
+                Base64.encode(dataURI)
+            )
+        );
     }
 
     /// @notice Mint a new token ID for `numDays`.

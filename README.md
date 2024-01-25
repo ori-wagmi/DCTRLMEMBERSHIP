@@ -13,29 +13,16 @@ Sepolia:
 - AccountGuardian: https://sepolia.etherscan.io/address/0x0e5e22506e7c5b9d8de73a99724ddfc99daefa51#code
 - AccountV3 (unverified): https://sepolia.etherscan.io/address/0xe14051b8e736caa02068bc2d9bad61f72f9c9d8d
 - membership: https://sepolia.etherscan.io/address/0x807ec011bd4c5b122178d73fbd0b49d46fb4a0b9#code
-FobNFT minted: 0x880505222ccAd5E03221005839F12d32B7F4B2EF
-Minter minted: 0xB2895d2a0205F05c70C0342259492C97423FaCC4
+- FobNFT: 0x880505222ccAd5E03221005839F12d32B7F4B2EF
+- Minter: 0xB2895d2a0205F05c70C0342259492C97423FaCC4
 
 # How to use
 1. Create a copy of `.env.example` and rename it to `.env`
 2. Add your private key to `.env` if you intend to deploy
 3. Install with `npm install`
-
-4. Use the DCTRL tool with `npm start` or `npx hardhat run .\scripts\start.js`
-
-5. Deploy onchain with `npx hardhat run .\scripts\deploy\deploy.js`
-
-There currently are no tests
-
+4. Deploy onchain with `npx hardhat run .\scripts\deploy\deploy.js`
 
 You can create a long-running local hardhat node with `npx hardhat node` and then point the DCTRL tool to it with `npx hardhat run .\scripts\start.js --network hardhat` and pointing your dApp to `localhost:8545` with `chainId 31337`
-
-## DCTRL Tool
-This is a command line tool for interacting with a local deployment of the smart contracts.
-
-Run it with `npm start`
-
-To see a tutorial, watch the following 13 min video (i know the link looks sus, but it's a microsoft [.ms] onedrive [1drv] link): https://1drv.ms/v/s!AiBtiJ6tWLolzA3UwNhtoc5Wp9Pp?e=Ykq630
 
 ## Smart Contracts
 ### Summary
@@ -61,6 +48,7 @@ The multisig is expected to always have superadmin rights.
 MembershipNFT.sol is an ERC721 that contains two fields:
 - creationDate
 - name
+- role
 
 The NFT is intended to be a 1:1 lifetime onchain representation with each physical human being. The NFT is "soulbound" in the sense that it cannot be traded by default.
 

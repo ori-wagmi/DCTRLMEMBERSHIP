@@ -5,7 +5,15 @@ if (process.env.TEST_MODE === "true") {
 }
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.22",
+  solidity: {
+    version: "0.8.22",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 1000,
+      },
+    },
+  },
   networks: {
     sepolia: {
       url: `https://ethereum-sepolia.publicnode.com`	,
