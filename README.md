@@ -16,6 +16,11 @@ Sepolia:
 - FobNFT: 0x880505222ccAd5E03221005839F12d32B7F4B2EF
 - Minter: 0xB2895d2a0205F05c70C0342259492C97423FaCC4
 
+Linea testnet:
+- FobMapper: https://goerli.lineascan.build/address/0x58375D0DF233c70533BA307e3c5C3B4f52D58B43
+
+I recommend getting Linea Testnet from the covalent faucet: https://docs.linea.build/use-mainnet/fund
+
 # How to use
 1. Create a copy of `.env.example` and rename it to `.env`
 2. Add your private key to `.env` if you intend to deploy
