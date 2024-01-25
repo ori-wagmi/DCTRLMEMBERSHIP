@@ -98,10 +98,10 @@ contract MinterTest is Test {
         assertEq(1, membership.balanceOf(alanah));
 
         // Check membership metadata is correct
-        (uint256 creationDate, string memory name) = membership.idToMetadata(1);
+        (uint256 creationDate, string memory name, MembershipNFT.roles role) = membership.idToMetadata(1);
         assertEq(name, memberName);
         assertEq(creationDate, block.timestamp);
-        
+
         vm.stopPrank();
     }
 
@@ -112,7 +112,7 @@ contract MinterTest is Test {
         // Check namehash corresponds to ID
         assertEq(targetId, membership.nameToId(keccak256(abi.encode(memberName))));
 
-        (uint256 createDate, string memory metaName) = membership.idToMetadata(1);
+        (uint256 createDate, string memory metaName, MembershipNFT.roles role) = membership.idToMetadata(1);
         
         // Check retrieved metadata name is equal to namehash
         assertEq(keccak256(abi.encode(metaName)), keccak256(abi.encode(memberName)));

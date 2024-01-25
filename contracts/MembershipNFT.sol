@@ -17,14 +17,39 @@ contract MembershipNFT is ERC721, AccessControl {
     // Special roles accessing mint and transfer functions.
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant TRANSFER_ROLE = keccak256("TRANSFER_ROLE");
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
-    struct nftMetadata {
+    enum roles {
+        Visitor,
+        Member,
+        Trusted,
+        Admin,
+        Banned
+    }
+
+    struct membershipMetadata {
         uint256 creationDate;
         string name;
-        //TODO: need to add role
+        roles role;
     }
-    // Maps a token ID to a metadata struct.
-    mapping(uint256 => nftMetadata) public idToMetadata;
+
+    // Maps a token ID to a membershipMetadata struct.
+    mapping(uint256 => membershipMetadata) public idToMetadata;
+
+    // Reserved for future use.
+    struct additionalFields {
+        uint256 field0;
+        uint256 field1;
+        string field2;
+        string field3;
+        bytes32 field4;
+        bytes32 field5;
+        address field6;
+        address field7;
+    }
+
+    // Maps a token ID to a membershipMetadata struct.
+    mapping(uint256 => additionalFields) public idToAdditionalFields;
 
     // Maps the keccak hash of name metadata to a token ID.
     mapping(bytes32 => uint256) public nameToId;
@@ -51,7 +76,7 @@ contract MembershipNFT is ERC721, AccessControl {
     function mint(address to, string calldata name) public onlyRole(MINTER_ROLE) {
         totalSupply += 1; // tokenId starts at 1
 
-        idToMetadata[totalSupply] = nftMetadata(block.timestamp, name);
+        idToMetadata[totalSupply] = membershipMetadata(block.timestamp, name, roles.Visitor);
         nameToId[keccak256(abi.encode(name))] = totalSupply;
 
         _safeMint(to, totalSupply);
@@ -76,7 +101,6 @@ contract MembershipNFT is ERC721, AccessControl {
     }
 
     /// @inheritdoc ERC721
-    /// @notice Transfer with arbitrary bytes.
     /// @dev Transfer role only.
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) public override onlyRole(TRANSFER_ROLE) {
         super._safeTransfer(from, to, tokenId, data);
@@ -105,4 +129,58 @@ contract MembershipNFT is ERC721, AccessControl {
         _revokeRole(DEFAULT_ADMIN_ROLE, multisig);
         multisig = _multisig;
     }
+
+    /// @notice Sets a new role for a member
+    /// @dev Must be MANAGER_ROLE
+    function setRole(uint256 tokenId, roles _role) public onlyRole(MANAGER_ROLE) {
+        require(_exists(tokenId), "must exist");
+        idToMetadata[tokenId].role = _role;
+    }
+    /// @notice Transfers multisig to new address
+    /// @dev Must be MANAGER_ROLE
+    function setName(uint256 tokenId, string calldata name) public onlyRole(MANAGER_ROLE) {
+        require(_exists(tokenId), "must exist");
+        idToMetadata[tokenId].name = name;
+    }
+    /// @notice Reserved for future use. Sets additional field for member.
+    function setField0(uint256 tokenId, uint256 field0) public onlyRole(MANAGER_ROLE) {
+        require(_exists(tokenId), "must exist");
+        idToAdditionalFields[tokenId].field0 = field0;
+    }
+    /// @notice Reserved for future use. Sets additional field for member.
+    function setField1(uint256 tokenId, uint256 field1) public onlyRole(MANAGER_ROLE) {
+        require(_exists(tokenId), "must exist");
+        idToAdditionalFields[tokenId].field1 = field1;
+    }
+    /// @notice Reserved for future use. Sets additional field for member.
+    function setField2(uint256 tokenId, string memory field2) public onlyRole(MANAGER_ROLE) {
+        require(_exists(tokenId), "must exist");
+        idToAdditionalFields[tokenId].field2 = field2;
+    }
+    /// @notice Reserved for future use. Sets additional field for member.
+    function setField3(uint256 tokenId, string memory field3) public onlyRole(MANAGER_ROLE) {
+        require(_exists(tokenId), "must exist");
+        idToAdditionalFields[tokenId].field3 = field3;
+    }
+    /// @notice Reserved for future use. Sets additional field for member.
+    function setField4(uint256 tokenId, bytes32 field4) public onlyRole(MANAGER_ROLE) {
+        require(_exists(tokenId), "must exist");
+        idToAdditionalFields[tokenId].field4 = field4;
+    }
+    /// @notice Reserved for future use. Sets additional field for member.
+    function setField5(uint256 tokenId, bytes32 field5) public onlyRole(MANAGER_ROLE) {
+        require(_exists(tokenId), "must exist");
+        idToAdditionalFields[tokenId].field5 = field5;
+    }
+    /// @notice Reserved for future use. Sets additional field for member.
+    function setField6(uint256 tokenId, address field6) public onlyRole(MANAGER_ROLE) {
+        require(_exists(tokenId), "must exist");
+        idToAdditionalFields[tokenId].field6 = field6;
+    }
+    /// @notice Reserved for future use. Sets additional field for member.
+    function setField7(uint256 tokenId, address field7) public onlyRole(MANAGER_ROLE) {
+        require(_exists(tokenId), "must exist");
+        idToAdditionalFields[tokenId].field7 = field7;
+    }
+
 }
