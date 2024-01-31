@@ -83,6 +83,7 @@ contract MinterTest is Test {
         membership.grantRole(membership.MINTER_ROLE(), address(minter));
         membership.grantRole(membership.MINTER_ROLE(), admin);
         //membership.grantRole(membership.TRANSFER_ROLE(), admin);
+        membership.grantRole(membership.MANAGER_ROLE(), admin);
         fob.grantRole(fob.MINTER_ROLE(), admin);
         fob.grantRole(fob.MINTER_ROLE(), address(minter));
         fob.grantRole(fob.BURNER_ROLE(), admin);
@@ -101,7 +102,9 @@ contract MinterTest is Test {
         (uint256 creationDate, string memory name, MembershipNFT.roles role) = membership.idToMetadata(1);
         assertEq(name, memberName);
         assertEq(creationDate, block.timestamp);
+        assertEq(uint(role), uint(MembershipNFT.roles.Member));
 
+        console.log("Role was: %d", uint(role));
         vm.stopPrank();
     }
 
@@ -267,7 +270,9 @@ contract MinterTest is Test {
         vm.stopPrank();
     }
 
-    /** Utilities */
+    /** Utilities 
+     *  Set visiblity to public to print.
+     */
     function testAccountsRoles() internal view {
         console.log("***** Accounts ******");
         console.log("This contract: ", testAddress);
@@ -282,6 +287,8 @@ contract MinterTest is Test {
         console.logBytes32(membership.MINTER_ROLE());
         console.log("Membership TRANSFER_ROLE: ");
         console.logBytes32(membership.TRANSFER_ROLE());
+        console.log("Membership MANAGER_ROLE: ");
+        console.logBytes32(membership.MANAGER_ROLE());
         console.log("Fob MINTER_ROLE: ");
         console.logBytes32(fob.MINTER_ROLE());
         console.log("Fob BURNER_ROLE: ");
