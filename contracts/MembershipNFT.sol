@@ -186,6 +186,31 @@ contract MembershipNFT is ERC721, AccessControl {
         idToAdditionalFields[tokenId].field7 = field7;
     }
 
+    function checkFieldInit(uint256 tokenId, uint8 index) public view returns (bool initial) {
+
+        // Sanity check
+        require(index < 8, "Index out of range");
+
+        additionalFields storage currentFields = idToAdditionalFields[tokenId];
+        bytes32 fieldValue;
+
+        assembly {
+            // Calculate the storage slot of the field
+            let fieldSlot := add(currentFields.slot, index)
+            fieldValue := sload(fieldSlot)
+        }
+
+        // Normalize for multiple types
+        bytes memory encoded = abi.encodePacked(fieldValue);
+
+        // Pad out to 32 bytes
+        bytes32 padded = abi.decode(encoded, (bytes32));
+
+        if (padded != bytes32(0)) {
+            return true;
+        }
+    }
+
     /// @inheritdoc ERC721
     /// @notice Given a token ID, returns its metadata.
     /// @dev Standard JSON metadata format wrapped by a data URI.
@@ -200,18 +225,30 @@ contract MembershipNFT is ERC721, AccessControl {
     /// @dev Concat all additional fields as JSON and keep packing into base64 encoding.
     /// @param tokenId (uint256)
     /// @return Data URI string
-    function getTokenURI(uint256 tokenId) internal view returns (string memory){
+    function getTokenURI(uint256 tokenId) internal view returns (string memory) {
         string memory imageBaseURI = "ipfs://test/";
 
+        string[8] memory valuesToPack;
+
+        if (checkFieldInit(tokenId, 0)) valuesToPack[0] = string(abi.encodePacked('"field_0": "', idToAdditionalFields[tokenId].field0, '",'));
+        else valuesToPack[0] = "";
+        if (checkFieldInit(tokenId, 1)) valuesToPack[1] = string(abi.encodePacked('"field_1": "', idToAdditionalFields[tokenId].field1, '",'));
+        else valuesToPack[1] = "";
+        if (checkFieldInit(tokenId, 2)) valuesToPack[2] = string(abi.encodePacked('"field_2": "', idToAdditionalFields[tokenId].field2, '",'));
+        else valuesToPack[2] = "";
+        if (checkFieldInit(tokenId, 3)) valuesToPack[3] = string(abi.encodePacked('"field_3": "', idToAdditionalFields[tokenId].field3, '",'));
+        else valuesToPack[3] = "";
+        if (checkFieldInit(tokenId, 4)) valuesToPack[4] = string(abi.encodePacked('"field_4": "', idToAdditionalFields[tokenId].field4, '",'));
+        else valuesToPack[4] = "";
+        if (checkFieldInit(tokenId, 5)) valuesToPack[5] = string(abi.encodePacked('"field_5": "', idToAdditionalFields[tokenId].field5, '",'));
+        else valuesToPack[5] = "";
+        if (checkFieldInit(tokenId, 6)) valuesToPack[6] = string(abi.encodePacked('"field_6": "', idToAdditionalFields[tokenId].field6, '",'));
+        else valuesToPack[6] = "";
+        if (checkFieldInit(tokenId, 7)) valuesToPack[7] = string(abi.encodePacked('"field_7": "', idToAdditionalFields[tokenId].field7, '",'));
+        else valuesToPack[7] = "";
+
         string memory fieldsConcat = string(abi.encodePacked(
-                '"field_0": "', idToAdditionalFields[tokenId].field0, '",', //uint
-                '"field_1": "', idToAdditionalFields[tokenId].field1, '",', //uint
-                '"field_2": "', idToAdditionalFields[tokenId].field2, '",', //string
-                '"field_3": "', idToAdditionalFields[tokenId].field3, '",', //string
-                '"field_4": "', idToAdditionalFields[tokenId].field4, '",', //bytes32
-                '"field_5": "', idToAdditionalFields[tokenId].field5, '",', //bytes32
-                '"field_6": "', idToAdditionalFields[tokenId].field6, '",', //address
-                '"field_7": "', idToAdditionalFields[tokenId].field7, '",'  //address
+            valuesToPack[0], valuesToPack[1], valuesToPack[2], valuesToPack[3], valuesToPack[4], valuesToPack[5], valuesToPack[6], valuesToPack[7]
         ));
 
         bytes memory dataURI = abi.encodePacked(

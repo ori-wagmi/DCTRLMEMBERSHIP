@@ -129,7 +129,7 @@ contract MinterTest is Test {
         console.log("");
     }
 
-    function testMembershipAddtionalField() public {
+    function testMembershipAddtionalFields() public {
         testMembershipIssue();
 
         // Has Manager Role
@@ -139,8 +139,13 @@ contract MinterTest is Test {
         string memory field2Test = "field 2 test";
         membership.setField2(1, field2Test);
 
+        // Check for defaults elsewhere
+        assertFalse(membership.checkFieldInit(1, 1));
+        assertTrue(membership.checkFieldInit(1, 2));
+        assertFalse(membership.checkFieldInit(1, 3));
+
         // Get it back as tuple and isolate.
-        (, , string memory _field2, , , , , ) = membership.idToAdditionalFields(1);
+        (uint _field0, uint _field1, string memory _field2, string memory _field3, bytes32 _field4, bytes32 _field5, address _field6, address _field7 ) = membership.idToAdditionalFields(1);
 
         //Check string field value output.
         assertEq(field2Test, _field2);
