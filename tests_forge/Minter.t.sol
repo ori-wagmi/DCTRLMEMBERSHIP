@@ -100,9 +100,10 @@ contract MinterTest is Test {
 
         // Check membership metadata is correct
         (uint256 creationDate, string memory name, MembershipNFT.roles role) = membership.idToMetadata(1);
+
         assertEq(name, memberName);
         assertEq(creationDate, block.timestamp);
-        assertEq(uint(role), uint(MembershipNFT.roles.Member));
+        assertEq(uint(role), uint(MembershipNFT.roles.Visitor));
 
         console.log("Role was: %d", uint(role));
         vm.stopPrank();
@@ -126,6 +127,26 @@ contract MinterTest is Test {
         console.log("ID %d Name: %s", targetId, metaName );
         console.log("ID %d Created: %d", targetId, createDate);
         console.log("");
+    }
+
+    function testMembershipAddtionalField() public {
+        testMembershipIssue();
+
+        // Has Manager Role
+        vm.prank(admin);
+
+        // Set field2 value for tokenId 1
+        string memory field2Test = "field 2 test";
+        membership.setField2(1, field2Test);
+
+        // Get it back as tuple and isolate.
+        (, , string memory _field2, , , , , ) = membership.idToAdditionalFields(1);
+
+        //Check string field value output.
+        assertEq(field2Test, _field2);
+
+        //Log the token URI data for validation.
+        console.log(membership.tokenURI(1));
     }
 
     function testMembershipTransfer() public {

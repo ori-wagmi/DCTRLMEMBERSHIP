@@ -26,6 +26,7 @@ contract FobNFT is ERC721, AccessControl {
     
     address public admin;
 
+    // Metadata defaults
     string public imageBaseUri = "https://google.com/";
     string public externalUri = "https://dctrl.wtf";
     string public animationUri = "";

@@ -3,6 +3,7 @@ pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/utils/Base64.sol";
 
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
@@ -10,6 +11,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 /// @title MembershipNFT
 /// @notice Membership NFT with access control
 contract MembershipNFT is ERC721, AccessControl {
+    using Strings for uint256;
 
     // Initialize supply at zero.
     uint256 public totalSupply = 0;
@@ -19,6 +21,7 @@ contract MembershipNFT is ERC721, AccessControl {
     bytes32 public constant TRANSFER_ROLE = keccak256("TRANSFER_ROLE");
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
+    // Roles types for membership status.
     enum roles {
         Visitor,
         Member,
@@ -181,6 +184,53 @@ contract MembershipNFT is ERC721, AccessControl {
     function setField7(uint256 tokenId, address field7) public onlyRole(MANAGER_ROLE) {
         require(_exists(tokenId), "must exist");
         idToAdditionalFields[tokenId].field7 = field7;
+    }
+
+    /// @inheritdoc ERC721
+    /// @notice Given a token ID, returns its metadata.
+    /// @dev Standard JSON metadata format wrapped by a data URI.
+    /// @param tokenId (uint256)
+    /// @return Data URI string
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        _requireMinted(tokenId);
+        return getTokenURI(tokenId);
+    }
+
+    /// @notice Given a token ID, prepare the JSON metadata string.
+    /// @dev Concat all additional fields as JSON and keep packing into base64 encoding.
+    /// @param tokenId (uint256)
+    /// @return Data URI string
+    function getTokenURI(uint256 tokenId) internal view returns (string memory){
+        string memory imageBaseURI = "ipfs://test/";
+
+        string memory fieldsConcat = string(abi.encodePacked(
+                '"field_0": "', idToAdditionalFields[tokenId].field0, '",', //uint
+                '"field_1": "', idToAdditionalFields[tokenId].field1, '",', //uint
+                '"field_2": "', idToAdditionalFields[tokenId].field2, '",', //string
+                '"field_3": "', idToAdditionalFields[tokenId].field3, '",', //string
+                '"field_4": "', idToAdditionalFields[tokenId].field4, '",', //bytes32
+                '"field_5": "', idToAdditionalFields[tokenId].field5, '",', //bytes32
+                '"field_6": "', idToAdditionalFields[tokenId].field6, '",', //address
+                '"field_7": "', idToAdditionalFields[tokenId].field7, '",'  //address
+        ));
+
+        bytes memory dataURI = abi.encodePacked(
+            '{',
+                '"name":"', idToMetadata[tokenId].name, '",',
+                '"description": "DCTRL Membership token.",',
+                '"image": "', imageBaseURI, tokenId.toString(), '",',
+                '"external_url": "",',
+                '"animation_url": "",',
+                '"creation_date": "', idToMetadata[tokenId].creationDate.toString(), '",',
+                fieldsConcat,
+            '}'
+        );
+        return string(
+            abi.encodePacked(
+                "data:application/json;base64,",
+                Base64.encode(dataURI)
+            )
+        );
     }
 
 }
